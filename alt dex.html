@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALT DEX — Pokédex Tracker PokeMMO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-obsidian: #050505;
+      --grid-color: rgba(255, 255, 255, 0.08);
+      --panel-surface: rgba(14, 14, 14, 0.94);
+      --panel-deep: rgba(7, 7, 7, 0.98);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-obsidian);
+      color: #f4f4f5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .theme-pill-active {
+      background: linear-gradient(135deg, #ffffff, #d4d4d8);
+      color: #09090b;
+      box-shadow: 0 8px 20px -8px rgba(255, 255, 255, 0.35);
+    }
+
+    .theme-accent-text {
+      color: #e4e4e7;
+    }
+
+    /* Fondo de cuadrícula en perspectiva */
+    .tunel {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      perspective: 540px;
+      pointer-events: none;
+      z-index: 0;
+      mask-image: radial-gradient(ellipse 88% 78% at 50% 35%, #000 20%, transparent 90%);
+      -webkit-mask-image: radial-gradient(ellipse 88% 78% at 50% 35%, #000 20%, transparent 90%);
+    }
+
+    .tunel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.07), rgba(161, 161, 170, 0.02) 55%, transparent 82%);
+    }
+
+    .tunel__plano {
+      position: absolute;
+      transform-style: preserve-3d;
+    }
+
+    .tunel__malla {
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: tunnelMove 10s linear infinite;
+    }
+
+    .tunel__plano--suelo {
+      left: -50%;
+      right: -50%;
+      bottom: -15%;
+      height: 68%;
+      transform-origin: bottom center;
+      transform: rotateX(74deg);
+    }
+
+    .tunel__plano--techo {
+      left: -50%;
+      right: -50%;
+      top: -15%;
+      height: 68%;
+      transform-origin: top center;
+      transform: rotateX(-74deg);
+    }
+
+    .tunel__plano--izquierda {
+      top: -30%;
+      bottom: -30%;
+      left: -12%;
+      width: 45%;
+      transform-origin: left center;
+      transform: rotateY(76deg);
+    }
+
+    .tunel__plano--derecha {
+      top: -30%;
+      bottom: -30%;
+      right: -12%;
+      width: 45%;
+      transform-origin: right center;
+      transform: rotateY(-76deg);
+    }
+
+    @keyframes tunnelMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 60px; }
+    }
+
+    .marca-agua {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .glass-card {
+      background: linear-gradient(165deg, var(--panel-surface), var(--panel-deep));
+      box-shadow: 0 20px 44px -22px rgba(0, 0, 0, 0.82), inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
+    }
+
+    .matrix-wrapper {
+      border-radius: 1.25rem;
+    }
+
+    .matrix-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+    }
+
+    .matrix-th-top {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: #0c0c0e;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.22);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      min-width: 165px;
+    }
+
+    .matrix-th-meta {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: #0c0c0e;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.22);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      min-width: 115px;
+    }
+
+    .matrix-th-check {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: #0c0c0e;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.22);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      min-width: 74px;
+    }
+
+    .matrix-td {
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      vertical-align: middle;
+    }
+
+    .pokemon-row-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(10, 10, 11, 0.92));
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .pokemon-row-card:hover {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(20, 20, 22, 0.96));
+      border-color: rgba(255, 255, 255, 0.35);
+      box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.85);
+    }
+
+    .pokemon-row-done {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(18, 18, 20, 0.95));
+      border-color: rgba(255, 255, 255, 0.38);
+    }
+  </style>
+</head>
+<body class="selection:bg-white/20 selection:text-white min-h-screen flex flex-col">
+
+  <!-- Fondo de cuadrícula -->
+  <div class="tunel" aria-hidden="true">
+    <div class="tunel__plano tunel__plano--techo"><div class="tunel__malla"></div></div>
+    <div class="tunel__plano tunel__plano--suelo"><div class="tunel__malla"></div></div>
+    <div class="tunel__plano tunel__plano--izquierda"><div class="tunel__malla"></div></div>
+    <div class="tunel__plano tunel__plano--derecha"><div class="tunel__malla"></div></div>
+  </div>
+
+  <!-- Barra superior sticky -->
+  <header class="sticky top-3 z-40 px-3 sm:px-6 pt-3">
+    <div class="max-w-[1780px] mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-[#09090b]/95 backdrop-blur-xl border border-white/15 shadow-[0_12px_36px_rgba(0,0,0,0.85)]">
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- Logo Pokéball -->
+        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-300 to-white p-0.5 shadow-md shrink-0">
+          <div class="w-full h-full rounded-full bg-[#09090b] flex items-center justify-center relative overflow-hidden">
+            <div class="w-full h-1/2 bg-zinc-200 absolute top-0"></div>
+            <div class="w-full h-[2px] bg-zinc-950 absolute top-1/2 -translate-y-1/2"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-white border-2 border-zinc-950 z-10"></div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="font-extrabold tracking-tight text-base text-white shrink-0">ALT DEX</span>
+          <span class="text-white/30 shrink-0">/</span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.06] border border-white/15 text-xs font-bold truncate theme-accent-text">
+            <span class="w-1.5 h-1.5 rounded-full bg-white shrink-0"></span>
+            <span class="truncate">Pokédex Tracker • Verificado con Dex de PokeMMO</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Leyenda y botones rápidos -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/[0.08] border border-white/25 text-zinc-200 font-bold">
+          <span class="w-2 h-2 rounded-sm bg-zinc-300"></span>
+          Ruta / Zona
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/[0.04] border border-white/15 text-zinc-300 font-bold">
+          <span class="w-2 h-2 rounded-sm bg-zinc-500"></span>
+          Pokémon Individual
+        </span>
+        <button
+          type="button"
+          onclick="toggleDexAudit()"
+          class="px-3 py-1 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/20 text-zinc-200 font-bold transition cursor-pointer"
+        >
+          Notas Dex (3)
+        </button>
+        <button
+          type="button"
+          onclick="scrollToMatrix()"
+          class="px-3 py-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.14] border border-white/15 text-zinc-200 hover:text-white font-bold transition cursor-pointer"
+        >
+          Ir a Tabla ↓
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="relative z-10 flex-1 max-w-[1780px] w-full mx-auto px-3 sm:px-6 pt-6 pb-16 space-y-5">
+
+    <!-- Panel desplegable de auditoría con la Dex de PokeMMO -->
+    <section id="dex-audit-panel" class="hidden glass-card rounded-3xl p-4 sm:p-5 border border-white/20 space-y-3">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-white"></span>
+          <h2 class="text-sm sm:text-base font-extrabold text-white">Auditoría realizada contra la Pokédex de PokeMMO</h2>
+        </div>
+        <button type="button" onclick="toggleDexAudit()" class="text-xs font-bold text-zinc-400 hover:text-white cursor-pointer">Cerrar ✕</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+        <div class="p-3 rounded-2xl bg-[#070708] border border-white/12 space-y-1">
+          <div class="font-extrabold text-white">#374 Beldum (Hoenn — Meteor Falls)</div>
+          <p class="text-zinc-400">Corregido: en PokeMMO aparece en encuentro individual normal (<span class="text-white font-semibold">5% sin Lure</span>) en la sala noroeste de Meteor Falls (Nv. 50–52).</p>
+        </div>
+        <div class="p-3 rounded-2xl bg-[#070708] border border-white/15 space-y-1">
+          <div class="font-extrabold text-zinc-200">#570 Zorua (Unova — Lostlorn Forest)</div>
+          <p class="text-zinc-400">Aviso Dex: Zorua <span class="text-white font-semibold">no sale en singular</span> en el bosque; aparece disfrazado por <em>Ilusión</em> en manadas x3 de Lostlorn Forest (usa <em>Gas Reactivo</em>) o en <em>Swarms</em> / cría.</p>
+        </div>
+        <div class="p-3 rounded-2xl bg-[#070708] border border-white/12 space-y-1">
+          <div class="font-extrabold text-white">#407 Roselia (Amistad desde Budew)</div>
+          <p class="text-zinc-400">Corregido: en PokeMMO Budew evoluciona a Roselia por alta amistad <span class="text-white font-semibold">durante el día (Day)</span>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tarjeta de progreso, columnas y filtros -->
+    <section class="glass-card rounded-3xl p-4 sm:p-6 border border-white/15 space-y-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1.5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] border border-white/15 text-[11px] font-bold uppercase tracking-wider text-zinc-300">
+            <span>POKEMMO • ENCUENTROS INDIVIDUALES VERIFICADOS • GUARDADO AUTOMÁTICO</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            Pokédex Tracker <span class="bg-gradient-to-r from-white via-zinc-300 to-zinc-400 bg-clip-text text-transparent">PokeMMO</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-zinc-400 max-w-3xl">
+            Rutas, señuelos (Lure), cañas, golpe roca, miel, fenómenos y evoluciones comprobados con la Pokédex de PokeMMO para encuentros individuales.
+          </p>
+        </div>
+
+        <!-- Progreso y desmarcar todo -->
+        <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div class="px-4 py-2.5 rounded-2xl bg-[#070708] border border-white/12 min-w-[225px]">
+            <div class="flex items-center justify-between gap-3 mb-1">
+              <span class="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">Progreso Total</span>
+              <span class="text-xs font-extrabold text-white">
+                <span id="done-count" class="text-white">0</span> / <span id="total-count">0</span>
+                <span id="done-pct" class="text-zinc-400 font-mono ml-1">(0%)</span>
+              </span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-zinc-900 overflow-hidden">
+              <div id="progress-bar" class="h-full bg-gradient-to-r from-zinc-400 via-zinc-200 to-white transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onclick="handleUncheckAll()"
+            class="px-3.5 py-2.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/20 text-xs font-extrabold text-zinc-200 transition cursor-pointer"
+          >
+            Desmarcar todo
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de columnas -->
+      <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+          20 Columnas Activas • Haz clic para marcar o desmarcar
+        </span>
+
+        <button
+          type="button"
+          onclick="toggleColumnPicker()"
+          class="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-xs font-bold text-zinc-200 transition cursor-pointer"
+        >
+          Columnas personalizadas ▾
+        </button>
+      </div>
+
+      <!-- Selector individual de columnas -->
+      <div id="column-picker-panel" class="hidden rounded-2xl bg-[#070708] border border-white/15 p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-black uppercase tracking-wider text-zinc-300">Mostrar / Ocultar Columnas</span>
+          <button
+            type="button"
+            onclick="showAllColumns()"
+            class="text-[11px] font-bold text-zinc-300 hover:text-white hover:underline cursor-pointer"
+          >
+            Mostrar todas
+          </button>
+        </div>
+        <div id="column-picker-grid" class="flex flex-wrap gap-1.5">
+          <!-- Renderizado por JS -->
+        </div>
+      </div>
+
+      <!-- Buscador y filtros -->
+      <div class="pt-3 border-t border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2.5 flex-1">
+          <div class="relative flex-1 min-w-[230px] max-w-md">
+            <input
+              id="matrix-search"
+              type="text"
+              oninput="handleSearchInput(this.value)"
+              placeholder="Buscar Pokémon, ruta, piedra, nivel o método..."
+              class="w-full rounded-2xl bg-[#070708] border border-white/15 pl-9 pr-8 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/50 transition"
+            />
+            <svg class="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <button
+              type="button"
+              id="clear-search-btn"
+              onclick="clearSearchInput()"
+              class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="inline-flex items-center gap-1 p-1 rounded-2xl bg-[#070708] border border-white/12" role="group" aria-label="Filtro de completado">
+            <button type="button" data-filter-btn="all" onclick="setStatusFilter('all')" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer">Todos</button>
+            <button type="button" data-filter-btn="pending" onclick="setStatusFilter('pending')" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer">Faltantes</button>
+            <button type="button" data-filter-btn="done" onclick="setStatusFilter('done')" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer">Completados</button>
+          </div>
+
+          <!-- Filtro rápido por método de encuentro individual -->
+          <select
+            id="method-filter"
+            aria-label="Filtrar por método individual"
+            onchange="setMethodFilter(this.value)"
+            class="rounded-2xl bg-[#070708] border border-white/15 px-3 py-2 text-xs font-bold text-zinc-200 focus:outline-none focus:border-white/50 transition cursor-pointer"
+          >
+            <option value="all">Método Individual: Todos</option>
+            <option value="lure">Señuelo (Lure)</option>
+            <option value="rod">Pesca (Good / Super Rod)</option>
+            <option value="water">Surf / Agua</option>
+            <option value="time">Horario (Día / Noche / 3 AM)</option>
+            <option value="rock">Golpe Roca (Rock Smash)</option>
+          </select>
+
+          <!-- Filtro rápido de objetos de cría (Breed Downs e Inciensos) -->
+          <select
+            id="breed-item-filter"
+            aria-label="Filtrar por objeto de cría o incienso"
+            onchange="setBreedItemFilter(this.value)"
+            class="rounded-2xl bg-[#070708] border border-white/15 px-3 py-2 text-xs font-bold text-zinc-200 focus:outline-none focus:border-white/50 transition cursor-pointer"
+          >
+            <option value="all">Cría / Inciensos: Todos</option>
+            <option value="any_incense">Solo Inciensos (Breed Downs)</option>
+            <option value="none">Sin objeto (None)</option>
+            <option value="sea incense">Sea Incense (Azurill)</option>
+            <option value="lax incense">Lax Incense (Wynaut)</option>
+            <option value="rock incense">Rock Incense (Bonsly)</option>
+            <option value="odd incense">Odd Incense (Mime Jr.)</option>
+            <option value="wave incense">Wave Incense (Mantyke)</option>
+          </select>
+        </div>
+
+        <div id="visible-rows-counter" class="text-xs font-mono text-zinc-400 shrink-0">
+          Mostrando 0 filas
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabla matriz sin barras de desplazamiento internas -->
+    <section id="matrix-section" class="glass-card rounded-3xl p-2 sm:p-3 border border-white/15">
+      <div class="matrix-wrapper border border-white/12 bg-[#060607]/95">
+        <table id="pokedex-matrix-table" class="matrix-table text-left">
+          <thead id="matrix-thead"></thead>
+          <tbody id="matrix-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast de notificación -->
+  <div id="toast-banner" class="fixed bottom-5 right-5 z-50 translate-y-20 opacity-0 pointer-events-none transition-all duration-300 px-4 py-3 rounded-2xl bg-[#111113] border border-white/25 text-white text-xs sm:text-sm font-semibold shadow-2xl flex items-center gap-2.5">
+    <span class="w-2.5 h-2.5 rounded-full bg-white"></span>
+    <span id="toast-message">Guardado</span>
+  </div>
+
+  <script>
+    const STORAGE_KEY_CHECKS = 'skoitter_pokemmo_dex_173_checks_v2';
+    const STORAGE_KEY_VISIBLE_COLS = 'skoitter_pokemmo_dex_173_visible_cols_v2';
+
+    const COLUMNS_SPEC = [
+      { key: 'kanto', label: 'Kanto', isFirst: true, hasCheckbox: true, defaultDone: true, group: 'regions' },
+      { key: 'johto', label: 'Johto', hasCheckbox: true, defaultDone: true, group: 'regions' },
+      { key: 'hoenn', label: 'Hoenn', hasCheckbox: true, defaultDone: true, group: 'regions' },
+      { key: 'sinnoh', label: 'Sinnoh', hasCheckbox: true, defaultDone: true, group: 'regions' },
+      { key: 'honeyList', label: 'Honey List', hasCheckbox: true, defaultDone: true, group: 'honey_phenos' },
+      { key: 'unova', label: 'Unova', hasCheckbox: true, defaultDone: true, group: 'regions' },
+      { key: 'levellingService', label: 'Levelling Service', hasCheckbox: true, defaultDone: false, group: 'evos_breed' },
+      { key: 'level', label: 'Level', isMeta: true, alignRight: true, group: 'evos_breed' },
+      { key: 'lvlOnce', label: 'Lvl Once', hasCheckbox: true, defaultDone: false, group: 'evos_breed' },
+      { key: 'stoneItemEvos', label: 'Stone/Item Evos', hasCheckbox: true, defaultDone: false, group: 'evos_breed' },
+      { key: 'stoneRequired', label: 'Stone Required', isMeta: true, group: 'evos_breed' },
+      { key: 'stoneDone', label: 'Done?', isStandaloneCheck: true, targetKey: 'stoneItemEvos', defaultDone: false, group: 'evos_breed' },
+      { key: 'tradeEvos', label: 'Trade Evos', hasCheckbox: true, defaultDone: false, group: 'evos_breed' },
+      { key: 'tradeDone', label: 'Done?', isStandaloneCheck: true, targetKey: 'tradeEvos', defaultDone: false, group: 'evos_breed' },
+      { key: 'levelupGimmick', label: 'Levelup with gimmick', hasCheckbox: true, defaultDone: false, group: 'evos_breed' },
+      { key: 'gimmickRequired', label: 'Gimmick Required', isMeta: true, group: 'evos_breed' },
+      { key: 'friendshipEvos', label: 'Friendship Evos', hasCheckbox: true, defaultDone: false, group: 'evos_breed' },
+      { key: 'breedDowns', label: 'Breed Downs', hasCheckbox: true, defaultDone: false, group: 'evos_breed' },
+      { key: 'heldItem', label: 'Held item?', isMeta: true, group: 'evos_breed' },
+      { key: 'phenos', label: 'Phenos', hasCheckbox: true, defaultDone: true, group: 'honey_phenos' }
+    ];
+
+    /* KANTO (PokeMMO — encuentros individuales verificados) */
+    const KANTO_LIST = [
+      'Viridian Forest', 'Caterpie', 'Weedle', 'Pidgey', 'Oddish x2', 'Bellsprout', 'Bulbasaur (Lure)',
+      'Route 24 (Arena Trap)', 'Squirtle (Lure)', 'Meowth', 'Psyduck', 'Abra', 'Route 3', 'Rattata',
+      'Spearow', 'Ekans', 'Sandshrew', 'Nidoran M', 'Nidoran F', 'Jigglypuff', 'Mankey',
+      'Charmander (Lure)', 'Five Isle Meadow', 'Sentret', 'Hoppip', 'Slowpoke x2', 'Togetic (Lure)',
+      'Five Island (Super Rod)', 'Shellder', 'Krabby', 'Horsea', 'Mt. Moon', 'Paras (2F)',
+      'Geodude', 'Berry Forest', 'Venonat', 'Drowzee', 'Exeggcute', 'Munchlax', 'Route 16', 'Grimer',
+      'Doduo', 'Icefall Cave', 'Swinub', 'Icefall Cave (Water)', 'Wooper', 'Tentacool (Back Room)',
+      'Seel', 'Lapras (Back Room)', 'Power Plant', 'Pikachu', 'Voltorb', 'Koffing', 'Electabuzz',
+      'Safari Zone (Entrance)', 'Chansey', 'Victory Road (Final Room)', 'Hitmonlee', 'Rhyhorn',
+      'Victory Road (2F)', 'Hitmonchan', 'Game Corner', 'Clefairy', 'Scyther', 'Pinsir', 'Porygon',
+      'Eevee', 'Sevault Canyon', 'Cubone', 'Phanpy', 'Larvitar', 'Skarmory', 'Route 12 (Super Rod)',
+      'Goldeen', 'Qwilfish', 'Ruin Valley', 'Yanma', 'Wobbuffet', 'Lost Cave', 'Murkrow',
+      'Misdreavus', 'Three Isle Port', 'Dunsparce'
+    ];
+
+    /* JOHTO (PokeMMO — encuentros individuales verificados) */
+    const JOHTO_LIST = [
+      'Route 31 (Night)', 'Hoothoot', 'Spinarak', 'Zubat', 'Poliwag x2', 'Chikorita (Lure)', 'Route 32',
+      'Mareep', 'Totodile (Lure)', 'Route 33', 'Cyndaquil (Lure)', 'Route 48', 'Vulpix', 'Growlithe', 'Diglett',
+      'Girafarig', 'Tauros', 'Route 38 (Day)', 'Farfetchd', 'Magnemite', 'Snubbull', 'Miltank',
+      'Cliff Cave', 'Onix', 'Kangaskhan', 'Union Cave', 'Tyrogue', 'Dragons Den (Water)', 'Dratini',
+      'Route 47 (Super Rod)', 'Chinchou', 'Luvdisc', 'Ruins of Alph', 'Smeargle', 'Natu',
+      'Olivine City (Super Rod)', 'Corsola', 'Route 37', 'Stantler', 'Pineco', 'Route 45', 'Slugma'
+    ];
+
+    /* HOENN (PokeMMO — encuentros individuales verificados: Beldum 5% sin Lure en Meteor Falls NW) */
+    const HOENN_LIST = [
+      'Petalburg Woods', 'Poochyena', 'Zigzagoon', 'Wurmple', 'Silcoon', 'Cascoon', 'Shroomish',
+      'Slakoth', 'Treecko (Lure)', 'Petalburg City (Super Rod)', 'Corphish', 'Route 104', 'Wingull',
+      'Taillow', 'Mudkip (Lure)', 'Route 112', 'Marill', 'Machop', 'Numel', 'Torchic (Lure)',
+      'Meteor Falls (NW Room)', 'Solrock', 'Lunatone', 'Bagon', 'Beldum (5% Single)', 'Desert Underpass',
+      'Ditto', 'Whismur', 'Route 116', 'Nincada', 'Skitty', 'Safari Zone (Hoenn)',
+      'Houndour', 'Ledyba', 'Aipom', 'Shuckle (Rock Smash)', 'Teddiursa', 'Sunkern', 'Surskit',
+      'Route 102', 'Seedot', 'Lotad', 'Ralts x2 (One Male)', 'Route 110', 'Plusle',
+      'Minun', 'Electrike', 'Gulpin', 'Route 119 (Super Rod)', 'Carvanha', 'Feebas',
+      'Route 120', 'Kecleon', 'Absol', 'Tropius', 'Mt. Pyre', 'Shuppet (1F)',
+      'Chingling (1F)', 'Duskull (2F)', 'Route 111', 'Baltoy', 'Cacnea',
+      'Trapinch', 'Jagged Pass', 'Spoink', 'Granite Cave (2F)', 'Makuhita', 'Aron',
+      'Sableye', 'Nosepass (Rock Smash)', 'Route 117 (Night)', 'Volbeat', 'Illumise',
+      'Sootopolis City (Super Rod)', 'Wailmer', 'Route 113', 'Spinda', 'Route 114 (Morning - Day)',
+      'Swablu', 'Shoal Cave (3 AM)', 'Snorunt (Both Gender)', 'Spheal', 'Underwater (Route 126)',
+      'Relicanth', 'Clamperl (Both Gender)', 'Torkoal (Fiery Path)', 'Koffing (Fiery Path)',
+      'Grimer (Fiery Path)', 'Route 118 (Good Rod)', 'Tentacool', 'Magikarp', 'Route 121',
+      'Gloom', 'Route 123', 'Roselia', 'Victory Road (Hoenn)', 'Hariyama', 'Lairon',
+      'Medicham', 'Mawile', 'New Mauville', 'Voltorb', 'Magnemite', 'Route 103 (Water)',
+      'Pelipper', 'Route 105 (Super Rod)', 'Wailord', 'Seafloor Cavern', 'Zubat',
+      'Golbat', 'Sky Pillar', 'Claydol', 'Banette', 'Altaria', 'Sableye (Sky Pillar)',
+      'Route 132 (Water)', 'Horsea', 'Seadra'
+    ];
+
+    /* SINNOH (PokeMMO — encuentros individuales verificados) */
+    const SINNOH_LIST = [
+      'Route 208', 'Bidoof', 'Budew', 'Stunky (Night)', 'Meditite', 'Ralts x2 (One Male)',
+      'Turtwig (Lure)', 'Route 211', 'Bronzor', 'Ponyta', 'Route 214', 'Chimchar (Lure)',
+      'Route 213 (Morning)', 'Buizel', 'Shellos', 'Piplup (Lure)', 'Chatot', 'Eterna Forest', 'Buneary',
+      'Old Chateau', 'Gastly', 'Rotom (Lure)', 'Route 205 (Good Rod)', 'Magikarp', 'Finneon', 'Barboach',
+      'Fuego Ironworks', 'Shinx', 'Pachirisu', 'Magmar', 'Route 209', 'Starly', 'Happiny',
+      'Mr. Mime', 'Sudowoodo', 'Sunyshore City (Good Rod)', 'Remoraid', 'Solaceon Ruins', 'Unown',
+      'Route 201 (Night/Morn)', 'Kricketot', 'Great Marsh', 'Carnivine', 'Skorupi', 'Croagunk',
+      'Valley Windworks (Night)', 'Drifloon', 'Route 218', 'Glameow', 'Turnback Cave',
+      'Spiritomb (Rock Smash)', 'Wayward Cave', 'Gible', 'Route 207', 'Hippopotas',
+      'Route 217', 'Snover', 'Mt. Coronet', 'Clefairy', 'Chingling'
+    ];
+
+    /* HONEY LIST (PokeMMO — árboles de miel individuales) */
+    const HONEY_LIST = [
+      'Heracross', 'Burmy (Both Gender)', 'Combee (F)', 'Cherubi'
+    ];
+
+    /* UNOVA (PokeMMO — encuentros individuales verificados + nota Dex en Zorua) */
+    const UNOVA_LIST = [
+      'Pinwheel Forest', 'Pansage', 'Pansear', 'Panpour', 'Pidove', 'Sewaddle', 'Venipede',
+      'Petilil', 'Cottonee', 'Snivy (Lure)', 'Outside Pinwheel Forest', 'Tympole', 'Sawk', 'Throh',
+      'Cold Storage', 'Timburr', 'Minccino', 'Vanillite', 'Route 6', 'Oshawott (Lure)', 'Route 3', 'Patrat',
+      'Lillipup', 'Purrloin', 'Blitzle', 'Tepig (Lure)', 'Challengers Cave', 'Woobat', 'Lickitung',
+      'Riolu', 'Mawile', 'Giant Chasm (Cave)', 'Jynx', 'Delibird', 'Sneasel (Night)', 'Route 11',
+      'Karrablast', 'Pawniard', 'Rufflet (Morning - Day)', 'Vullaby', 'Zangoose', 'Seviper',
+      'Gligar', 'Undella Bay (Water)', 'Mantine', 'Staryu', 'Spheal', 'Route 16', 'Solosis',
+      'Gothita', 'Trubbish', 'Tangela', 'Lostlorn Forest', 'Zorua (Illusion / Swarm)', 'Desert Resort',
+      'Sandile', 'Darumaka', 'Maractus', 'Dwebble', 'Scraggy', 'Sigilyph',
+      'Relic Castle (Top Left)', 'Yamask', 'Wellspring Cave', 'Roggenrolla',
+      'Dreamyard', 'Munna', 'Chargestone Cave', 'Ferroseed (Top Room)',
+      'Klink (Top Room)', 'Joltik (Top Room)', 'Tynamo (2.5%-10%)', 'Route 6 (Grass)',
+      'Deerling', 'Foongus', 'Shelmet', 'Twist Mountain',
+      'Cubchoo', 'Cryogonal', 'Mistralton Cave', 'Axew', 'Celestial Tower', 'Litwick (2F)',
+      'Elgyem (Roof)', 'Icirrus City', 'Stunfisk', 'Victory Road (1F)', 'Mienfoo',
+      'Durant', 'Deino', 'Victory Road (Outside)', 'Heatmor', 'Relic Castle (Bottom)',
+      'Larvesta', 'Dragonspiral Tower (1F)',
+      'Druddigon', 'Golett', 'Route 10', 'Bouffalant', 'Driftveil City (Water)', 'Frillish',
+      'Striaton City (Water)', 'Basculin'
+    ];
+
+    const LEVELLING_PAIRS = [
+      ['Bulbasaur', 31], ['Charmander', 35], ['Squirtle', 35], ['Caterpie', 9], ['Weedle', 9],
+      ['Pidgey', 35], ['Rattata', 20], ['Spearow', 20], ['Ekans', 22], ['Sandshrew', 22],
+      ['Nidoran♀', 16], ['Nidoran♂', 16], ['Zubat', 22], ['Oddish x2', 21], ['Paras', 24],
+      ['Venonat', 31], ['Diglett', 26], ['Meowth', 28], ['Psyduck', 33], ['Mankey', 28],
+      ['Poliwag x2', 25], ['Abra', 16], ['Machop', 28], ['Bellsprout', 21], ['Tentacool', 30],
+      ['Geodude', 25], ['Ponyta', 40], ['Slowpoke', 37], ['Magnemite', 30], ['Doduo', 31],
+      ['Seel', 34], ['Grimer', 38], ['Gastly', 25], ['Drowzee', 26], ['Krabby', 28],
+      ['Voltorb', 30], ['Cubone', 28], ['Koffing', 35], ['Rhyhorn', 42], ['Horsea', 32],
+      ['Goldeen', 33], ['Magikarp', 20], ['Omanyte', 40], ['Kabuto', 40], ['Dratini', 54],
+      ['Chikorita', 31], ['Cyndaquil', 35], ['Totodile', 29], ['Sentret', 15], ['Hoothoot', 20],
+      ['Ledyba', 18], ['Spinarak', 22], ['Chinchou', 27], ['Natu', 25], ['Mareep', 29],
+      ['Marill', 18], ['Hoppip', 18], ['Wooper', 20], ['Pineco', 31], ['Snubbull', 23],
+      ['Teddiursa', 30], ['Slugma', 38], ['Swinub', 33], ['Remoraid', 25], ['Houndour', 24],
+      ['Phanpy', 25], ['Larvitar', 54], ['Treecko', 35], ['Torchic', 35], ['Mudkip', 35],
+      ['Poochyena', 18], ['Zigzagoon', 20], ['Silcoon', 10], ['Cascoon', 10], ['Lotad', 14],
+      ['Seedot', 14], ['Taillow', 22], ['Wingull', 25], ['Ralts (F to 30, M to 20)', '<-'],
+      ['Surskit', 22], ['Shroomish', 23], ['Slakoth', 18], ['Whismur', 20], ['Makuhita', 24],
+      ['Aron', 41], ['Meditite', 37], ['Electrike', 26], ['Gulpin', 26], ['Carvanha', 30],
+      ['Wailmer', 40], ['Numel', 33], ['Spoink', 32], ['Trapinch', 44], ['Cacnea', 32],
+      ['Swablu', 35], ['Barboach', 30], ['Corphish', 30], ['Baltoy', 36], ['Lileep', 40],
+      ['Anorith', 40], ['Shuppet', 37], ['Duskull', 37], ['Snorunt (Male)', 42], ['Spheal', 43],
+      ['Bagon', 49], ['Beldum', 44], ['Turtwig', 31], ['Chimchar', 35], ['Piplup', 35],
+      ['Starly', 33], ['Bidoof', 15], ['Kricketot', 10], ['Shinx', 29], ['Cranidos', 30],
+      ['Shieldon', 30], ['Burmy (Both Gender)', 20], ['Combee (F)', 21], ['Buizel', 26],
+      ['Cherubi', 25], ['Shellos', 30], ['Drifloon', 28], ['Glameow', 38], ['Stunky', 34],
+      ['Bronzor', 33], ['Gible', 47], ['Hippopotas', 34], ['Skorupi', 40], ['Croagunk', 37],
+      ['Finneon', 31], ['Snover', 40], ['Snivy', 35], ['Tepig', 35], ['Oshawott', 35],
+      ['Patrat', 20], ['Lillipup', 31], ['Purrloin', 20], ['Pidove', 31], ['Blitzle', 27],
+      ['Roggenrola', 25], ['Timburr', 25], ['Tympole', 35], ['Sewaddle', 20], ['Venipede', 22],
+      ['Sandile', 39], ['Darumaka', 35], ['Dwebble', 34], ['Scraggy', 39], ['Yamask', 34],
+      ['Tirtouga', 37], ['Archen', 37], ['Trubbish', 36], ['Zorua', 30], ['Gothita', 40],
+      ['Solosis', 40], ['Vanillite', 46], ['Deerling', 34], ['Foongus', 39], ['Frillish', 40],
+      ['Joltik', 36], ['Ferroseed', 40], ['Klink', 48], ['Tynamo', 39], ['Elgyem', 42],
+      ['Litwick', 41], ['Axew', 47], ['Cubchoo', 37], ['Mienfoo', 50], ['Golett', 43],
+      ['Pawniard', 52], ['Rufflet', 54], ['Vullaby', 54], ['Deino', 63], ['Larvesta', 59]
+    ];
+
+    const LVL_ONCE_LIST = [
+      'Ivysaur', 'Charmeleon', 'Wartortle', 'Metapod', 'Kakuna', 'Pidgeotto', 'Dragonair',
+      'Bayleef', 'Quilava', 'Croconaw', 'Flaaffy', 'Skiploom', 'Pupitar', 'Grovyle',
+      'Combusken', 'Marshtomp', 'Female Kirlia', 'Vigoroth', 'Loudred', 'Lairon', 'Vibrava',
+      'Shelgon', 'Metang', 'Grotle', 'Monferno', 'Prinplup', 'Staravia', 'Luxio', 'Gabite',
+      'Servine', 'Pignite', 'Dewott', 'Herdier', 'Palpitoad', 'Whirlipede', 'Krokorok',
+      'Gothorita', 'Duosion', 'Vanillish', 'Klang', 'Fraxure', 'Zweilous', 'Sealeo', 'Tranquil'
+    ];
+
+    const STONE_ITEM_PAIRS = [
+      ['Raichu', 'Thunder Stone'], ['Gallade', 'Dawn Stone'], ['Froslass', 'Dawn Stone (Female)'],
+      ['Gorebyss', 'Deep Sea Scale'], ['Huntail', 'Deep Sea Tooth'], ['Kingdra', 'Dragon Scale'],
+      ['Porygon-Z', 'Dubious Disc'], ['Mismagius', 'Dusk Stone'], ['Honchkrow', 'Dusk Stone'],
+      ['Chandelure', 'Dusk Stone'], ['Electivire', 'Electirizer'], ['Ninetales', 'Fire Stone'],
+      ['Arcanine', 'Fire Stone'], ['Flareon', 'Fire Stone'], ['Simisear', 'Fire Stone'],
+      ['Politoed', "King's Rock"], ['Slowking', "King's Rock"], ['Vileplume', 'Leaf Stone'],
+      ['Victreebel', 'Leaf Stone'], ['Exeggutor', 'Leaf Stone'], ['Shiftry', 'Leaf Stone'],
+      ['Simisage', 'Leaf Stone'], ['Magmortar', 'Magmarizer'], ['Steelix', 'Metal Coat'],
+      ['Scizor', 'Metal Coat'], ['Nidoqueen', 'Moon Stone'], ['Nidoking', 'Moon Stone'],
+      ['Clefable', 'Moon Stone'], ['Wigglytuff', 'Moon Stone'], ['Delcatty', 'Moon Stone'],
+      ['Musharna', 'Moon Stone'], ['Rhyperior', 'Protector'], ['Weavile', 'Razor Claw (Night)'],
+      ['Gliscor', 'Razor Fang (Night)'], ['Dusknoir', 'Reaper Cloth'], ['Roserade', 'Shiny Stone'],
+      ['Togekiss', 'Shiny Stone'], ['Cinccino', 'Shiny Stone'], ['Bellossom', 'Sun Stone'],
+      ['Sunflora', 'Sun Stone'], ['Whimsicott', 'Sun Stone'], ['Lilligant', 'Sun Stone'],
+      ['Jolteon', 'Thunder Stone'], ['Eelektross', 'Thunder Stone'], ['Porygon2', 'Up-Grade'],
+      ['Poliwrath', 'Water Stone'], ['Cloyster', 'Water Stone'], ['Starmie', 'Water Stone'],
+      ['Vaporeon', 'Water Stone'], ['Ludicolo', 'Water Stone'], ['Simipour', 'Water Stone']
+    ];
+
+    const TRADE_EVOS_LIST = [
+      'Alakazam', 'Machamp', 'Golem', 'Gengar', 'Gigalith', 'Conkeldurr', 'Escavalier', 'Accelgor'
+    ];
+
+    const GIMMICK_PAIRS = [
+      ['Mr. Mime', 'Lvl up with Mimic'],
+      ['Hitmontop', 'Tyrogue Evo (Equal Atk/Def)'],
+      ['Ninjask', 'Evo Nincada with open party slot'],
+      ['Shedinja', 'Evo Nincada with open party slot'],
+      ['Milotic', 'Level up Feebas with high Beauty'],
+      ['Ambipom', 'Level up with Double Hit'],
+      ['Magnezone', 'Level up in magnetic zone'],
+      ['Lickilicky', 'Level up with Rollout'],
+      ['Tangrowth', 'Level up with Ancient Power'],
+      ['Yanmega', 'Level up with Ancient Power'],
+      ['Leafeon', 'Level up next to Mossy Rock'],
+      ['Glaceon', 'Level up next to Icy Rock'],
+      ['Mamoswine', 'Level up with Ancient Power'],
+      ['Probopass', 'Level up in magnetic zone']
+    ];
+
+    /* FRIENDSHIP EVOS (Verificado con Dex de PokeMMO: Roselia desde Budew requiere Día) */
+    const FRIENDSHIP_LIST = [
+      'Snorlax', 'Crobat', 'Espeon (Day)', 'Umbreon (Night)', 'Blissey', 'Roselia (Day)',
+      'Chimecho (Night)', 'Lopunny', 'Lucario (Day)', 'Swoobat', 'Leavanny'
+    ];
+
+    const BREED_DOWN_PAIRS = [
+      ['Pichu', 'None'], ['Cleffa', 'None'], ['Igglybuff', 'None'], ['Togepi', 'None'],
+      ['Smoochum', 'None'], ['Elekid', 'None'], ['Magby', 'None'], ['Azurill', 'Sea Incense'],
+      ['Wynaut', 'Lax Incense'], ['Bonsly', 'Rock Incense'], ['Mime Jr.', 'Odd Incense'],
+      ['Mantyke', 'Wave Incense']
+    ];
+
+    const PHENOS_LIST = [
+      'Drilbur', 'Excadrill', 'Audino', 'Ducklett', 'Swanna', 'Emolga', 'Alomomola'
+    ];
+
+    const ROUTE_EXACT_SET = new Set([
+      'viridian forest', 'route 24 (arena trap)', 'route 3', 'five isle meadow',
+      'five island (super rod)', 'mt. moon', 'mt moon', 'berry forest', 'route 16', 'icefall cave',
+      'icefall cave (water)', 'power plant', 'safari zone (entrance)',
+      'victory road (final room)', 'victory road (2f)', 'game corner', 'sevault canyon',
+      'route 12 (super rod)', 'ruin valley', 'lost cave', 'three isle port',
+      'route 31 (night)', 'route 32', 'route 33', 'route 48', 'route 38 (day)', 'cliff cave',
+      'union cave', 'dragons den (water)', 'route 47 (super rod)', 'ruins of alph',
+      'olivine city (super rod)', 'route 37', 'route 45', 'petalburg woods',
+      'petalburg city (super rod)', 'route 104', 'route 112', 'meteor falls (nw room)',
+      'desert underpass', 'route 116', 'safari zone (hoenn)', 'underwater (route 126)',
+      'shoal cave (3 am)', 'route 102', 'route 110', 'route 119 (super rod)', 'route 120',
+      'mt. pyre', 'route 111', 'jagged pass', 'granite cave (2f)', 'route 117 (night)',
+      'sootopolis city (super rod)', 'route 113', 'route 114 (morning - day)',
+      'route 118 (good rod)', 'route 121', 'route 123', 'victory road (hoenn)',
+      'new mauville', 'route 103 (water)', 'route 105 (super rod)', 'seafloor cavern',
+      'sky pillar', 'route 132 (water)', 'route 208', 'route 211', 'route 214',
+      'route 213 (morning)', 'eterna forest', 'old chateau',
+      'route 205 (good rod)', 'fuego ironworks', 'route 209', 'sunyshore city (good rod)',
+      'solaceon ruins', 'route 201 (night/morn)', 'great marsh', 'valley windworks (night)',
+      'route 218', 'turnback cave', 'wayward cave', 'route 207', 'route 217', 'mt. coronet',
+      'pinwheel forest', 'outside pinwheel forest', 'cold storage', 'route 6',
+      'challengers cave', 'giant chasm (cave)', 'route 11', 'undella bay (water)',
+      'lostlorn forest', 'desert resort', 'relic castle (top left)',
+      'wellspring cave', 'dreamyard', 'chargestone cave',
+      'route 6 (grass)', 'twist mountain', 'mistralton cave', 'celestial tower',
+      'icirrus city', 'victory road (1f)', 'victory road (outside)', 'relic castle (bottom)',
+      'dragonspiral tower (1f)', 'route 10', 'driftveil city (water)', 'striaton city (water)'
+    ]);
+
+    function isRouteOrLocationLabel(text) {
+      const clean = String(text || '').toLowerCase().trim();
+      if (!clean) return false;
+      if (ROUTE_EXACT_SET.has(clean)) return true;
+      return /\b(route|forest|cave|meadow|island|power plant|safari zone|victory road|game corner|canyon|valley|port|den|ruins|underpass|mt\.|mt |mount|tower|castle|bay|resort|dreamyard|chargestone|cold storage|eterna|chateau|ironworks|marsh|windworks|cavern|pillar|mauville|coronet)\b/i.test(clean);
+    }
+
+    const POKEMON_DEX_MAP = {
+      'caterpie': 10, 'weedle': 13, 'pidgey': 16, 'oddish x2': 43, 'oddish': 43,
+      'bellsprout': 69, 'bulbasaur (lure)': 1, 'bulbasaur': 1, 'squirtle (lure)': 7, 'squirtle': 7,
+      'meowth': 52, 'psyduck': 54, 'abra': 63, 'rattata': 19, 'spearow': 21, 'ekans': 23,
+      'sandshrew': 27, 'nidoran m': 32, 'nidoran♂': 32, 'nidoran f': 29, 'nidoran♀': 29,
+      'jigglypuff': 39, 'mankey': 56, 'charmander (lure)': 4, 'charmander': 4, 'sentret': 161,
+      'hoppip': 187, 'slowpoke x2': 79, 'slowpoke': 79, 'togetic (lure)': 176, 'shellder': 90,
+      'krabby': 98, 'horsea': 116, 'paras (2f)': 46, 'paras': 46, 'geodude': 74,
+      'venonat': 48, 'drowzee': 96, 'exeggcute': 102, 'munchlax': 446, 'grimer': 88,
+      'grimer (fiery path)': 88, 'doduo': 84, 'swinub': 220, 'wooper': 194,
+      'tentacool (back room)': 72, 'tentacool': 72, 'seel': 86,
+      'lapras (back room)': 131, 'lapras': 131, 'pikachu': 25, 'voltorb': 100, 'koffing': 109,
+      'koffing (fiery path)': 109, 'electabuzz': 125, 'chansey': 113, 'hitmonlee': 106,
+      'rhyhorn': 111, 'hitmonchan': 107, 'clefairy': 35, 'scyther': 123, 'pinsir': 127,
+      'porygon': 137, 'eevee': 133, 'cubone': 104, 'phanpy': 231, 'larvitar': 246, 'skarmory': 227,
+      'goldeen': 118, 'qwilfish': 211, 'yanma': 193, 'wobbuffet': 202, 'murkrow': 198,
+      'misdreavus': 200, 'dunsparce': 206, 'hoothoot': 163, 'spinarak': 167, 'zubat': 41,
+      'golbat': 42, 'poliwag x2': 60, 'poliwag': 60, 'chikorita (lure)': 152, 'chikorita': 152,
+      'mareep': 179, 'totodile (lure)': 158, 'totodile': 158, 'cyndaquil (lure)': 155,
+      'cyndaquil': 155, 'vulpix': 37, 'growlithe': 58, 'diglett': 50, 'girafarig': 203,
+      'tauros': 128, 'farfetchd': 83, 'magnemite': 81, 'snubbull': 209, 'miltank': 241,
+      'onix': 95, 'kangaskhan': 115, 'tyrogue': 236, 'dratini': 147, 'chinchou': 170,
+      'luvdisc': 370, 'smeargle': 235, 'natu': 177, 'corsola': 222, 'stantler': 234,
+      'poochyena': 261, 'zigzagoon': 263, 'wurmple': 265, 'silcoon': 266, 'cascoon': 268,
+      'shroomish': 285, 'slakoth': 287, 'treecko (lure)': 252, 'treecko': 252, 'corphish': 341,
+      'wingull': 278, 'pelipper': 279, 'taillow': 276, 'mudkip (lure)': 258, 'mudkip': 258,
+      'marill': 183, 'machop': 66, 'numel': 322, 'torchic (lure)': 255, 'torchic': 255,
+      'solrock': 338, 'lunatone': 337, 'bagon': 371, 'beldum (5% single)': 374, 'beldum': 374,
+      'ditto': 132, 'whismur': 293, 'nincada': 290, 'skitty': 300, 'houndour': 228,
+      'ledyba': 165, 'aipom': 190, 'shuckle (rock smash)': 213, 'teddiursa': 216,
+      'sunkern': 191, 'pineco': 204, 'slugma': 218, 'torkoal': 324, 'torkoal (fiery path)': 324,
+      'relicanth': 369, 'clamperl (both gender)': 366, 'snorunt (both gender)': 361,
+      'snorunt (male)': 361, 'seedot': 273, 'surskit': 283, 'lotad': 270, 'plusle': 311,
+      'minun': 312, 'electrike': 309, 'gulpin': 316, 'carvanha': 318, 'feebas': 349,
+      'kecleon': 352, 'absol': 359, 'tropius': 357, 'shuppet (1f)': 353, 'shuppet': 353,
+      'chingling (1f)': 433, 'chingling': 433, 'duskull (2f)': 355, 'duskull': 355,
+      'baltoy': 343, 'claydol': 344, 'banette': 354, 'altaria': 334, 'seadra': 117,
+      'cacnea': 331, 'trapinch': 328, 'spoink': 325, 'makuhita': 296, 'hariyama': 297,
+      'aron': 304, 'lairon': 305, 'medicham': 308, 'sableye': 302, 'sableye (sky pillar)': 302,
+      'nosepass (rock smash)': 299, 'volbeat': 313, 'illumise': 314, 'wailmer': 320,
+      'wailord': 321, 'gloom': 44, 'spinda': 327, 'swablu': 333, 'bidoof': 399, 'budew': 406,
+      'stunky (night)': 434, 'meditite': 307, 'ralts x2 (one male)': 280,
+      'ralts (f to 30, m to 20)': 280, 'turtwig (lure)': 387, 'turtwig': 387, 'bronzor': 436,
+      'ponyta': 77, 'chimchar (lure)': 390, 'chimchar': 390, 'buizel': 418, 'shellos': 422,
+      'piplup (lure)': 393, 'piplup': 393, 'chatot': 441, 'buneary': 427, 'gastly': 92,
+      'rotom (lure)': 479, 'rotom': 479, 'magikarp': 129, 'finneon': 456, 'barboach': 339,
+      'shinx': 403, 'pachirisu': 417, 'magmar': 126, 'starly': 396, 'happiny': 440,
+      'mr. mime': 122, 'sudowoodo': 185, 'remoraid': 223, 'unown': 201, 'kricketot': 401,
+      'carnivine': 455, 'skorupi': 451, 'croagunk': 453, 'drifloon': 425, 'glameow': 431,
+      'spiritomb (rock smash)': 442, 'gible': 443, 'hippopotas': 449, 'snover': 459,
+      'pansage': 511, 'pansear': 513, 'panpour': 515, 'pidove': 519, 'sewaddle': 540,
+      'venipede': 543, 'petilil': 548, 'cottonee': 546, 'snivy (lure)': 495, 'snivy': 495,
+      'tympole': 535, 'sawk': 539, 'throh': 538, 'timburr': 532, 'minccino': 572,
+      'vanillite': 582, 'oshawott (lure)': 501, 'oshawott': 501, 'patrat': 504,
+      'lillipup': 506, 'purrloin': 509, 'blitzle': 522, 'tepig (lure)': 498, 'tepig': 498,
+      'woobat': 527, 'lickitung': 108, 'riolu': 447, 'mawile': 303, 'jynx': 124,
+      'delibird': 225, 'sneasel (night)': 215, 'karrablast': 588, 'pawniard': 624,
+      'rufflet (morning - day)': 627, 'vullaby': 629, 'zangoose': 335, 'seviper': 336,
+      'gligar': 207, 'mantine': 226, 'staryu': 120, 'spheal': 363, 'solosis': 577,
+      'gothita': 574, 'trubbish': 568, 'tangela': 114, 'zorua (illusion / swarm)': 570, 'zorua': 570,
+      'sandile': 551, 'darumaka': 554, 'maractus': 556, 'dwebble': 557, 'scraggy': 559, 'sigilyph': 561,
+      'yamask': 562, 'roggenrolla': 524, 'munna': 517, 'ferroseed (top room)': 597,
+      'klink (top room)': 599, 'joltik (top room)': 595, 'tynamo (2.5%-10%)': 602, 'tynamo': 602,
+      'deerling': 585, 'foongus': 590, 'shelmet': 616, 'cubchoo': 613, 'cryogonal': 615, 'axew': 610,
+      'litwick (2f)': 607, 'elgyem (roof)': 605, 'stunfisk': 618, 'mienfoo': 619,
+      'durant': 632, 'deino': 633, 'heatmor': 631, 'larvesta': 636, 'druddigon': 621,
+      'golett': 622, 'bouffalant': 626, 'frillish': 592, 'basculin': 550, 'heracross': 214,
+      'burmy (both gender)': 412, 'combee (f)': 415, 'cherubi': 420, 'drilbur': 529,
+      'excadrill': 530, 'audino': 531, 'ducklett': 580, 'swanna': 581, 'emolga': 587,
+      'alomomola': 594, 'raichu': 26, 'gallade': 475, 'froslass': 478, 'gorebyss': 368,
+      'huntail': 367, 'kingdra': 230, 'porygon-z': 474, 'mismagius': 429, 'honchkrow': 430,
+      'chandelure': 609, 'electivire': 466, 'ninetales': 38, 'arcanine': 59, 'flareon': 136,
+      'simisear': 514, 'politoed': 186, 'slowking': 199, 'vileplume': 45, 'victreebel': 71,
+      'exeggutor': 103, 'shiftry': 275, 'simisage': 512, 'magmortar': 467, 'steelix': 208,
+      'scizor': 212, 'nidoqueen': 31, 'nidoking': 34, 'clefable': 36, 'wigglytuff': 40,
+      'delcatty': 301, 'musharna': 518, 'rhyperior': 464, 'weavile': 461, 'gliscor': 472,
+      'dusknoir': 477, 'roserade': 407, 'togekiss': 468, 'cinccino': 573, 'bellossom': 182,
+      'sunflora': 192, 'whimsicott': 547, 'lilligant': 549, 'jolteon': 135, 'eelektross': 604,
+      'porygon2': 233, 'poliwrath': 62, 'cloyster': 91, 'starmie': 121, 'vaporeon': 134,
+      'ludicolo': 272, 'simipour': 516, 'alakazam': 65, 'machamp': 68, 'golem': 76,
+      'gengar': 94, 'gigalith': 526, 'conkeldurr': 534, 'escavalier': 589, 'accelgor': 617,
+      'hitmontop': 237, 'ninjask': 291, 'shedinja': 292, 'milotic': 350, 'ambipom': 424,
+      'magnezone': 462, 'lickilicky': 463, 'tangrowth': 465, 'yanmega': 469, 'leafeon': 470,
+      'glaceon': 471, 'mamoswine': 473, 'probopass': 476, 'snorlax': 143, 'crobat': 169,
+      'espeon (day)': 196, 'umbreon (night)': 197, 'blissey': 242, 'roselia (day)': 407, 'roselia': 407,
+      'chimecho (night)': 433, 'chimecho': 433, 'lopunny': 428, 'lucario (day)': 448, 'lucario': 448,
+      'swoobat': 528, 'leavanny': 542,
+      'pichu': 172, 'cleffa': 173, 'igglybuff': 174, 'togepi': 175, 'smoochum': 238,
+      'elekid': 239, 'magby': 240, 'azurill': 298, 'wynaut': 360, 'bonsly': 438,
+      'mime jr.': 439, 'mantyke': 458, 'ivysaur': 2, 'charmeleon': 5, 'wartortle': 8,
+      'metapod': 11, 'kakuna': 14, 'pidgeotto': 17, 'dragonair': 148, 'bayleef': 153,
+      'quilava': 156, 'croconaw': 159, 'flaaffy': 180, 'skiploom': 188, 'pupitar': 247,
+      'grovyle': 253, 'combusken': 256, 'marshtomp': 259, 'female kirlia': 281,
+      'vigoroth': 288, 'loudred': 294, 'vibrava': 329, 'shelgon': 372, 'metang': 375,
+      'grotle': 388, 'monferno': 391, 'prinplup': 394, 'staravia': 397, 'luxio': 404,
+      'gabite': 444, 'servine': 496, 'pignite': 499, 'dewott': 502, 'herdier': 507,
+      'palpitoad': 536, 'whirlipede': 544, 'krokorok': 552, 'gothorita': 575,
+      'duosion': 578, 'vanillish': 583, 'klang': 600, 'fraxure': 611, 'zweilous': 634,
+      'sealeo': 364, 'tranquil': 520, 'cranidos': 408, 'shieldon': 410, 'tirtouga': 564,
+      'archen': 566
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function resolvePokemonDexByName(name) {
+      const clean = String(name || '').toLowerCase().trim();
+      if (!clean) return null;
+      if (POKEMON_DEX_MAP[clean]) return POKEMON_DEX_MAP[clean];
+      const stripped = clean.replace(/\s*\([^)]*\)\s*/g, '').replace(/\s*x\d+/g, '').trim();
+      return POKEMON_DEX_MAP[stripped] || null;
+    }
+
+    function getMiniSpriteUrl(name) {
+      if (!name || isRouteOrLocationLabel(name)) return '';
+      const dex = resolvePokemonDexByName(name);
+      if (!dex) return '';
+      return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dex}.png`;
+    }
+
+    function getEvolutionItemSpriteUrl(itemText) {
+      const clean = String(itemText || '').toLowerCase().trim();
+      if (!clean || clean === 'none') return '';
+      if (clean.includes('thunder')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png';
+      if (clean.includes('dawn')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dawn-stone.png';
+      if (clean.includes('dusk')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dusk-stone.png';
+      if (clean.includes('fire')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/fire-stone.png';
+      if (clean.includes('leaf')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leaf-stone.png';
+      if (clean.includes('moon')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/moon-stone.png';
+      if (clean.includes('shiny')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/shiny-stone.png';
+      if (clean.includes('sun')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sun-stone.png';
+      if (clean.includes('water')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/water-stone.png';
+      if (clean.includes('deep sea scale')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/deep-sea-scale.png';
+      if (clean.includes('deep sea tooth')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/deep-sea-tooth.png';
+      if (clean.includes('dragon scale')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dragon-scale.png';
+      if (clean.includes('dubious disc')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dubious-disc.png';
+      if (clean.includes('electirizer')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/electirizer.png';
+      if (clean.includes("king's rock")) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/kings-rock.png';
+      if (clean.includes('magmarizer')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/magmarizer.png';
+      if (clean.includes('metal coat')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/metal-coat.png';
+      if (clean.includes('protector')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/protector.png';
+      if (clean.includes('razor claw')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razor-claw.png';
+      if (clean.includes('razor fang')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razor-fang.png';
+      if (clean.includes('reaper cloth')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/reaper-cloth.png';
+      if (clean.includes('up-grade')) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/up-grade.png';
+      return '';
+    }
+
+    function getConditionBadge(text) {
+      const t = String(text || '').toLowerCase();
+      if (!t) return null;
+      if (t.includes('illusion / swarm')) return { label: 'ILUSIÓN / SWARM', cls: 'bg-white/12 border-white/30 text-zinc-200' };
+      if (t.includes('5% single')) return { label: '5% SINGULAR', cls: 'bg-white/10 border-white/25 text-zinc-200' };
+      if (t.includes('3 am')) return { label: '3 AM', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      if (t.includes('night/morn')) return { label: 'NOCHE/MAÑ', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      if (t.includes('morning') || t.includes('day') || t.includes('(day)')) return { label: 'DÍA/MAÑ', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      if (t.includes('night')) return { label: 'NOCHE', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      if (t.includes('lure')) return { label: 'SEÑUELO', cls: 'bg-white/12 border-white/30 text-white' };
+      if (t.includes('super rod')) return { label: 'SUPER CAÑA', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      if (t.includes('good rod')) return { label: 'BUENA CAÑA', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      if (t.includes('water')) return { label: 'SURF / AGUA', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      if (t.includes('arena trap')) return { label: 'ARENA TRAP', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      if (t.includes('rock smash')) return { label: 'GOLPE ROCA', cls: 'bg-zinc-800 border-zinc-600 text-zinc-200' };
+      return null;
+    }
+
+    function buildMatrixRows() {
+      const totalRows = Math.max(
+        KANTO_LIST.length,
+        JOHTO_LIST.length,
+        HOENN_LIST.length,
+        SINNOH_LIST.length,
+        UNOVA_LIST.length,
+        LEVELLING_PAIRS.length
+      );
+      const rows = [];
+
+      for (let i = 0; i < totalRows; i++) {
+        const lvlOnceMon = LVL_ONCE_LIST[i] || '';
+        const lvlEntry = lvlOnceMon && LEVELLING_PAIRS[i] ? LEVELLING_PAIRS[i] : null;
+        const stoneEntry = STONE_ITEM_PAIRS[i] || null;
+        const tradeMon = TRADE_EVOS_LIST[i] || '';
+        const gimmickEntry = GIMMICK_PAIRS[i] || null;
+        const breedEntry = BREED_DOWN_PAIRS[i] || null;
+
+        rows.push({
+          rowIndex: i,
+          cells: {
+            kanto: KANTO_LIST[i] ? { id: `r${i}-kanto`, text: KANTO_LIST[i], defaultDone: true } : null,
+            johto: JOHTO_LIST[i] ? { id: `r${i}-johto`, text: JOHTO_LIST[i], defaultDone: true } : null,
+            hoenn: HOENN_LIST[i] ? { id: `r${i}-hoenn`, text: HOENN_LIST[i], defaultDone: true } : null,
+            sinnoh: SINNOH_LIST[i] ? { id: `r${i}-sinnoh`, text: SINNOH_LIST[i], defaultDone: true } : null,
+            honeyList: HONEY_LIST[i] ? { id: `r${i}-honey`, text: HONEY_LIST[i], defaultDone: true } : null,
+            unova: UNOVA_LIST[i] ? { id: `r${i}-unova`, text: UNOVA_LIST[i], defaultDone: true } : null,
+            levellingService: lvlEntry ? { id: `r${i}-lvlsvc`, text: lvlEntry[0], defaultDone: false } : null,
+            level: lvlEntry ? { text: String(lvlEntry[1]) } : null,
+            lvlOnce: lvlOnceMon ? { id: `r${i}-lvl1`, text: lvlOnceMon, defaultDone: false } : null,
+            stoneItemEvos: stoneEntry ? { id: `r${i}-stone`, text: stoneEntry[0], stoneText: stoneEntry[1], defaultDone: false } : null,
+            stoneRequired: stoneEntry ? { text: stoneEntry[1] } : null,
+            stoneDone: stoneEntry ? { id: `r${i}-stone`, defaultDone: false } : null,
+            tradeEvos: tradeMon ? { id: `r${i}-trade`, text: tradeMon, defaultDone: false } : null,
+            tradeDone: tradeMon ? { id: `r${i}-trade`, defaultDone: false } : null,
+            levelupGimmick: gimmickEntry ? { id: `r${i}-gimmick`, text: gimmickEntry[0], defaultDone: false } : null,
+            gimmickRequired: gimmickEntry ? { text: gimmickEntry[1] } : null,
+            friendshipEvos: FRIENDSHIP_LIST[i] ? { id: `r${i}-friend`, text: FRIENDSHIP_LIST[i], defaultDone: false } : null,
+            breedDowns: breedEntry ? { id: `r${i}-breed`, text: breedEntry[0], defaultDone: false } : null,
+            heldItem: breedEntry ? { text: breedEntry[1] } : null,
+            phenos: PHENOS_LIST[i] ? { id: `r${i}-pheno`, text: PHENOS_LIST[i], defaultDone: true } : null
+          }
+        });
+      }
+
+      return rows;
+    }
+
+    const MATRIX_ROWS = buildMatrixRows();
+
+    let checkOverrides = {};
+    try {
+      checkOverrides = JSON.parse(localStorage.getItem(STORAGE_KEY_CHECKS) || '{}') || {};
+    } catch (e) {
+      checkOverrides = {};
+    }
+
+    let visibleColKeys = new Set(COLUMNS_SPEC.map((c) => c.key));
+    try {
+      const savedCols = JSON.parse(localStorage.getItem(STORAGE_KEY_VISIBLE_COLS) || 'null');
+      if (Array.isArray(savedCols) && savedCols.length > 0) {
+        const validSet = new Set(savedCols.filter((k) => COLUMNS_SPEC.some((c) => c.key === k)));
+        validSet.add('kanto');
+        if (validSet.size > 0) visibleColKeys = validSet;
+      }
+    } catch (e) {}
+
+    let searchQuery = '';
+    let statusFilter = 'all';
+    let methodFilter = 'all';
+    let breedItemFilter = 'all';
+    let confirmUncheckAllTimer = null;
+    let awaitingUncheckConfirm = false;
+
+    function persistChecks() {
+      try {
+        localStorage.setItem(STORAGE_KEY_CHECKS, JSON.stringify(checkOverrides));
+      } catch (e) {}
+    }
+
+    function persistVisibleCols() {
+      try {
+        localStorage.setItem(STORAGE_KEY_VISIBLE_COLS, JSON.stringify(Array.from(visibleColKeys)));
+      } catch (e) {}
+    }
+
+    function isChecked(id, defaultDone = false) {
+      if (!id) return false;
+      if (Object.prototype.hasOwnProperty.call(checkOverrides, id)) {
+        return !!checkOverrides[id];
+      }
+      return !!defaultDone;
+    }
+
+    function toggleCheck(id, defaultDone = false) {
+      if (!id) return;
+      const nextVal = !isChecked(id, defaultDone);
+      checkOverrides[id] = nextVal;
+      persistChecks();
+      renderMatrix();
+    }
+
+    function handleUncheckAll() {
+      if (!awaitingUncheckConfirm) {
+        awaitingUncheckConfirm = true;
+        showToast('Haz clic de nuevo en "Desmarcar todo" para confirmar');
+        clearTimeout(confirmUncheckAllTimer);
+        confirmUncheckAllTimer = setTimeout(() => {
+          awaitingUncheckConfirm = false;
+        }, 3500);
+        return;
+      }
+
+      awaitingUncheckConfirm = false;
+      clearTimeout(confirmUncheckAllTimer);
+
+      MATRIX_ROWS.forEach((row) => {
+        COLUMNS_SPEC.forEach((col) => {
+          if (col.hasCheckbox) {
+            const cell = row.cells[col.key];
+            if (cell && cell.id) {
+              checkOverrides[cell.id] = false;
+            }
+          }
+        });
+      });
+
+      persistChecks();
+      renderMatrix();
+      showToast('Todas las casillas fueron desmarcadas');
+    }
+
+    function toggleDexAudit() {
+      const panel = document.getElementById('dex-audit-panel');
+      if (panel) panel.classList.toggle('hidden');
+    }
+
+    function toggleColumnPicker() {
+      const panel = document.getElementById('column-picker-panel');
+      if (panel) panel.classList.toggle('hidden');
+    }
+
+    function toggleColumnVisibility(key) {
+      if (key === 'kanto') return;
+      if (visibleColKeys.has(key)) {
+        if (visibleColKeys.size > 1) visibleColKeys.delete(key);
+      } else {
+        visibleColKeys.add(key);
+      }
+      persistVisibleCols();
+      renderMatrix();
+    }
+
+    function showAllColumns() {
+      visibleColKeys = new Set(COLUMNS_SPEC.map((c) => c.key));
+      persistVisibleCols();
+      renderMatrix();
+      showToast('Todas las columnas visibles');
+    }
+
+    function renderColumnPicker() {
+      const grid = document.getElementById('column-picker-grid');
+      if (!grid) return;
+      grid.innerHTML = COLUMNS_SPEC.map((col) => {
+        const active = visibleColKeys.has(col.key);
+        const locked = col.key === 'kanto';
+        return `
+          <button
+            type="button"
+            onclick="toggleColumnVisibility('${col.key}')"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+              active
+                ? 'bg-white/15 border-white/40 text-white'
+                : 'bg-[#080809] border-white/10 text-zinc-500'
+            } ${locked ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer hover:border-white/50'}"
+          >
+            ${active ? '✓ ' : ''}${escapeHtml(col.label)}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function getVisibleColumns() {
+      return COLUMNS_SPEC.filter((c) => visibleColKeys.has(c.key));
+    }
+
+    function getColumnProgress(col) {
+      const checkKey = col.isStandaloneCheck ? col.targetKey : col.key;
+      const seen = new Set();
+      let done = 0;
+      let total = 0;
+
+      MATRIX_ROWS.forEach((row) => {
+        const cell = row.cells[checkKey];
+        if (cell && cell.id && !seen.has(cell.id)) {
+          seen.add(cell.id);
+          total += 1;
+          if (isChecked(cell.id, cell.defaultDone)) {
+            done += 1;
+          }
+        }
+      });
+
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      return { done, total, pct };
+    }
+
+    function rowMatchesCriteria(row) {
+      const q = searchQuery.trim().toLowerCase();
+      const visibleCols = getVisibleColumns();
+
+      if (methodFilter !== 'all') {
+        const rowTexts = visibleCols
+          .map((col) => {
+            const cell = row.cells[col.key];
+            return cell && cell.text ? String(cell.text).toLowerCase() : '';
+          })
+          .join(' | ');
+
+        if (methodFilter === 'lure' && !rowTexts.includes('lure')) return false;
+        if (methodFilter === 'rod' && !rowTexts.includes('rod')) return false;
+        if (methodFilter === 'water' && !rowTexts.includes('water') && !rowTexts.includes('underwater')) return false;
+        if (methodFilter === 'time' && !/\b(night|morning|day|3 am|morn)\b/.test(rowTexts)) return false;
+        if (methodFilter === 'rock' && !rowTexts.includes('rock smash')) return false;
+      }
+
+      if (breedItemFilter !== 'all') {
+        const breedCell = row.cells.breedDowns;
+        const heldCell = row.cells.heldItem;
+        if (!breedCell || !heldCell) return false;
+
+        const heldVal = String(heldCell.text || '').toLowerCase().trim();
+        if (breedItemFilter === 'none') {
+          if (heldVal !== 'none') return false;
+        } else if (breedItemFilter === 'any_incense') {
+          if (!heldVal.includes('incense')) return false;
+        } else {
+          if (heldVal !== breedItemFilter) return false;
+        }
+      }
+
+      let matchesSearch = true;
+      if (q) {
+        matchesSearch = visibleCols.some((col) => {
+          const cell = row.cells[col.key];
+          return cell && String(cell.text || '').toLowerCase().includes(q);
+        });
+      }
+      if (!matchesSearch) return false;
+
+      if (statusFilter === 'all') return true;
+
+      const checkableCells = [];
+      visibleCols.forEach((col) => {
+        if (col.hasCheckbox) {
+          const cell = row.cells[col.key];
+          if (cell && cell.id) checkableCells.push(cell);
+        }
+      });
+
+      if (checkableCells.length === 0) return statusFilter === 'pending';
+
+      const anyDone = checkableCells.some((c) => isChecked(c.id, c.defaultDone));
+      const allDone = checkableCells.every((c) => isChecked(c.id, c.defaultDone));
+
+      if (statusFilter === 'done') return anyDone;
+      if (statusFilter === 'pending') return !allDone;
+      return true;
+    }
+
+    function handleSearchInput(val) {
+      searchQuery = val || '';
+      const clearBtn = document.getElementById('clear-search-btn');
+      if (clearBtn) {
+        clearBtn.classList.toggle('hidden', !searchQuery);
+      }
+      renderMatrix();
+    }
+
+    function clearSearchInput() {
+      const input = document.getElementById('matrix-search');
+      if (input) input.value = '';
+      handleSearchInput('');
+    }
+
+    function setStatusFilter(filter) {
+      statusFilter = filter;
+      renderMatrix();
+    }
+
+    function setMethodFilter(value) {
+      methodFilter = value || 'all';
+      renderMatrix();
+    }
+
+    function setBreedItemFilter(value) {
+      breedItemFilter = value || 'all';
+      renderMatrix();
+    }
+
+    function scrollToMatrix() {
+      const section = document.getElementById('matrix-section');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function renderThead(visibleCols) {
+      const thead = document.getElementById('matrix-thead');
+      if (!thead) return;
+      thead.innerHTML = `
+        <tr>
+          ${visibleCols.map((col) => {
+            const thClass = col.isStandaloneCheck
+              ? 'matrix-th-check px-2 py-2.5 text-[11px] text-center'
+              : col.isMeta
+                ? 'matrix-th-meta px-2.5 py-2.5 text-[11px]'
+                : 'matrix-th-top px-2.5 py-2.5 text-[11px]';
+
+            const showProg = col.hasCheckbox || col.isStandaloneCheck;
+            const prog = showProg ? getColumnProgress(col) : null;
+
+            return `
+              <th scope="col" class="${thClass}">
+                <div class="flex flex-col gap-1 min-w-0">
+                  <span class="font-bold tracking-tight uppercase text-zinc-200 whitespace-nowrap" title="${escapeHtml(col.label)}">${escapeHtml(col.label)}</span>
+                  ${
+                    prog
+                      ? `<div class="flex items-center justify-between gap-1.5 text-[10px] font-mono text-zinc-400">
+                          <span>${prog.done}/${prog.total}</span>
+                          <span class="text-white font-bold">${prog.pct}%</span>
+                        </div>
+                        <div class="w-full h-1 rounded-full bg-zinc-900 overflow-hidden">
+                          <div class="h-full bg-white transition-all duration-300" style="width: ${prog.pct}%"></div>
+                        </div>`
+                      : ''
+                  }
+                </div>
+              </th>
+            `;
+          }).join('')}
+        </tr>
+      `;
+    }
+
+    function renderCellContent(col, cell) {
+      if (!cell) {
+        return `<span class="text-zinc-700 text-xs select-none">—</span>`;
+      }
+
+      if (col.isMeta) {
+        const stoneIconUrl = col.key === 'stoneRequired' ? getEvolutionItemSpriteUrl(cell.text) : '';
+        return `
+          <div class="flex items-center gap-1.5 min-w-0 ${col.alignRight ? 'justify-end' : 'justify-start'}">
+            ${
+              stoneIconUrl
+                ? `<img src="${stoneIconUrl}" alt="${escapeHtml(cell.text)}" loading="lazy" onerror="this.style.display='none';" class="w-5 h-5 object-contain shrink-0" style="image-rendering: pixelated;" />`
+                : ''
+            }
+            <span class="text-xs leading-tight font-mono whitespace-nowrap ${col.alignRight ? 'text-right block text-zinc-200 font-semibold' : 'text-zinc-300'}" title="${escapeHtml(cell.text)}">
+              ${escapeHtml(cell.text)}
+            </span>
+          </div>
+        `;
+      }
+
+      const checked = isChecked(cell.id, cell.defaultDone);
+
+      if (col.isStandaloneCheck) {
+        return `
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked="${checked}"
+            onclick="toggleCheck('${cell.id}', ${!!cell.defaultDone})"
+            class="w-5 h-5 rounded-md border flex items-center justify-center text-xs font-black mx-auto transition cursor-pointer ${
+              checked
+                ? 'bg-white border-white text-zinc-950 shadow-sm shadow-white/25'
+                : 'bg-[#09090b] border-white/20 text-transparent hover:border-white/50'
+            }"
+          >
+            ✓
+          </button>
+        `;
+      }
+
+      const isRoute = col.group === 'regions' && isRouteOrLocationLabel(cell.text);
+      const dexNum = !isRoute ? resolvePokemonDexByName(cell.text) : null;
+      const spriteUrl = !isRoute ? getMiniSpriteUrl(cell.text) : '';
+      const stoneBadgeUrl = col.key === 'stoneItemEvos' ? getEvolutionItemSpriteUrl(cell.stoneText) : '';
+      const condBadge = getConditionBadge(cell.text);
+
+      return `
+        <div
+          role="checkbox"
+          tabindex="0"
+          aria-checked="${checked}"
+          onclick="toggleCheck('${cell.id}', ${!!cell.defaultDone})"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCheck('${cell.id}', ${!!cell.defaultDone});}"
+          title="${escapeHtml(cell.text)}"
+          class="group flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl border transition-all cursor-pointer select-none ${
+            isRoute
+              ? 'bg-white/[0.07] border-white/25 hover:border-white/45'
+              : checked
+                ? 'pokemon-row-done'
+                : 'pokemon-row-card'
+          }"
+        >
+          <div class="flex items-center gap-2 min-w-0">
+            ${
+              isRoute
+                ? `<span class="px-1.5 py-0.5 rounded bg-white/15 border border-white/25 text-[9px] font-black uppercase tracking-tight text-white shrink-0">RUTA</span>`
+                : spriteUrl
+                  ? `<div class="w-8 h-8 rounded-lg bg-[#08080a] border border-white/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <img src="${spriteUrl}" alt="${escapeHtml(cell.text)}" loading="lazy" onerror="this.style.display='none';" class="w-7 h-7 object-contain" style="image-rendering: pixelated;" />
+                    </div>`
+                  : `<span class="w-2 h-2 rounded-full bg-zinc-500 shrink-0"></span>`
+            }
+            <div class="flex flex-col min-w-0">
+              <div class="flex items-center gap-1.5 min-w-0">
+                ${
+                  !isRoute && dexNum
+                    ? `<span class="text-[9px] font-mono font-bold text-zinc-400 shrink-0">#${String(dexNum).padStart(3, '0')}</span>`
+                    : ''
+                }
+                <span class="text-xs leading-tight whitespace-nowrap ${
+                  isRoute
+                    ? 'font-extrabold text-white'
+                    : checked
+                      ? 'font-bold text-white'
+                      : 'font-semibold text-zinc-200'
+                }">
+                  ${escapeHtml(cell.text)}
+                </span>
+              </div>
+              ${
+                condBadge
+                  ? `<span class="mt-0.5 inline-block w-fit px-1.5 py-[1px] rounded border text-[9px] font-black tracking-tight ${condBadge.cls}">${escapeHtml(condBadge.label)}</span>`
+                  : ''
+              }
+            </div>
+            ${
+              stoneBadgeUrl
+                ? `<img src="${stoneBadgeUrl}" alt="${escapeHtml(cell.stoneText || '')}" title="${escapeHtml(cell.stoneText || '')}" loading="lazy" onerror="this.style.display='none';" class="w-4 h-4 object-contain shrink-0 ml-1" style="image-rendering: pixelated;" />`
+                : ''
+            }
+          </div>
+
+          <span class="w-4 h-4 rounded-md border flex items-center justify-center text-[10px] font-black shrink-0 transition ${
+            checked
+              ? 'bg-white border-white text-zinc-950'
+              : 'bg-[#070708] border-white/20 text-transparent group-hover:border-white/50'
+          }">
+            ✓
+          </span>
+        </div>
+      `;
+    }
+
+    function updateFilterButtons() {
+      document.querySelectorAll('[data-filter-btn]').forEach((btn) => {
+        const f = btn.getAttribute('data-filter-btn');
+        if (f === statusFilter) {
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-extrabold transition theme-pill-active cursor-pointer';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-extrabold transition text-zinc-400 hover:text-white cursor-pointer';
+        }
+      });
+    }
+
+    function updateGlobalProgress() {
+      const seenIds = new Set();
+      let done = 0;
+      let total = 0;
+
+      MATRIX_ROWS.forEach((row) => {
+        COLUMNS_SPEC.forEach((col) => {
+          if (col.hasCheckbox) {
+            const cell = row.cells[col.key];
+            if (cell && cell.id && !seenIds.has(cell.id)) {
+              seenIds.add(cell.id);
+              total += 1;
+              if (isChecked(cell.id, cell.defaultDone)) {
+                done += 1;
+              }
+            }
+          }
+        });
+      });
+
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      const doneEl = document.getElementById('done-count');
+      const totalEl = document.getElementById('total-count');
+      const pctEl = document.getElementById('done-pct');
+      const barEl = document.getElementById('progress-bar');
+
+      if (doneEl) doneEl.textContent = done;
+      if (totalEl) totalEl.textContent = total;
+      if (pctEl) pctEl.textContent = `(${pct}%)`;
+      if (barEl) barEl.style.width = `${pct}%`;
+    }
+
+    function renderMatrix() {
+      const visibleCols = getVisibleColumns();
+      renderColumnPicker();
+      updateFilterButtons();
+      renderThead(visibleCols);
+
+      const tbody = document.getElementById('matrix-tbody');
+      if (!tbody) return;
+
+      const filteredRows = MATRIX_ROWS.filter((row) => rowMatchesCriteria(row));
+
+      const counterEl = document.getElementById('visible-rows-counter');
+      if (counterEl) {
+        counterEl.textContent = `Mostrando ${filteredRows.length} de ${MATRIX_ROWS.length} filas`;
+      }
+
+      if (filteredRows.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="${Math.max(1, visibleCols.length)}" class="px-6 py-10 text-center text-sm text-zinc-400">
+              No se encontraron filas que coincidan con tu búsqueda o filtro.
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = filteredRows.map((row) => {
+          const isEven = row.rowIndex % 2 === 0;
+          const rowBg = isEven ? 'bg-[#08080a]/90' : 'bg-[#0d0d10]/90';
+
+          return `
+            <tr class="${rowBg} hover:bg-white/[0.04] transition-colors">
+              ${visibleCols.map((col) => {
+                const cell = row.cells[col.key];
+                const tdClass = col.isStandaloneCheck
+                  ? 'matrix-td px-2 py-1.5 text-center'
+                  : 'matrix-td px-2 py-1.5';
+
+                return `
+                  <td class="${tdClass}">
+                    ${renderCellContent(col, cell)}
+                  </td>
+                `;
+              }).join('')}
+            </tr>
+          `;
+        }).join('');
+      }
+
+      updateGlobalProgress();
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const banner = document.getElementById('toast-banner');
+      const text = document.getElementById('toast-message');
+      if (!banner || !text) return;
+      text.textContent = msg;
+      banner.classList.remove('translate-y-20', 'opacity-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        banner.classList.add('translate-y-20', 'opacity-0');
+      }, 2200);
+    }
+
+    renderMatrix();
+  </script>
+</body>
+</html>
