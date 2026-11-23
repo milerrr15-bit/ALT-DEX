@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALT DEX — Pokédex Tracker PokeMMO</title>
+  <style>
+    :root {
+      --bg-obsidian: #050505;
+      --grid-color: rgba(255, 255, 255, 0.045);
+      --panel-surface: #0e0e10;
+      --panel-deep: #070708;
+      --border-subtle: rgba(255, 255, 255, 0.12);
+      --border-faint: rgba(255, 255, 255, 0.06);
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-obsidian);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Fondo de cuadrícula estático de bajo consumo en GPU */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.05), transparent 55%),
+        linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+      background-size: 100% 100%, 64px 64px, 64px 64px;
+    }
+
+    /* Barra superior sticky */
+    .topbar {
+      position: sticky;
+      top: 8px;
+      z-index: 30;
+      padding: 8px 16px 0;
+    }
+
+    .topbar-inner {
+      max-width: 1780px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(9, 9, 11, 0.96);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .pokeball {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fff, #a1a1aa);
+      padding: 2px;
+      flex-shrink: 0;
+    }
+
+    .pokeball-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #09090b;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pokeball-inner::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 100%;
+      height: 50%;
+      background: #e4e4e7;
+    }
+
+    .pokeball-inner::after {
+      content: '';
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #09090b;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      font-size: 12px;
+      font-weight: 700;
+      color: #e4e4e7;
+    }
+
+    .dot-live {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      max-width: 1780px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 16px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card {
+      background: linear-gradient(165deg, var(--panel-surface), var(--panel-deep));
+      border: 1px solid var(--border-subtle);
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 14px 30px -18px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .btn {
+      padding: 7px 13px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #e4e4e7;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+
+    .btn-active {
+      background: #fff;
+      color: #09090b;
+      border-color: #fff;
+    }
+
+    .flex-between {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .flex-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h1 {
+      margin: 8px 0 6px;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    p.sub {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 760px;
+    }
+
+    /* Barra de progreso */
+    .progress-box {
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: #070708;
+      border: 1px solid var(--border-subtle);
+      min-width: 230px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 7px;
+      border-radius: 99px;
+      background: #18181b;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-fill {
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.15s ease-out;
+    }
+
+    /* Entradas y filtros */
+    .search-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .input, .select {
+      background: #070708;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .input:focus, .select:focus {
+      border-color: rgba(255, 255, 255, 0.45);
+    }
+
+    .input {
+      min-width: 250px;
+      padding-right: 30px;
+    }
+
+    .clear-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .clear-btn:hover {
+      color: #fff;
+    }
+
+    .seg-group {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      background: #070708;
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+    }
+
+    .seg-btn {
+      padding: 5px 11px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .seg-btn:hover {
+      color: #fff;
+    }
+
+    .seg-btn.active {
+      background: #fff;
+      color: #09090b;
+    }
+
+    /* Tabla matriz */
+    .matrix-wrapper {
+      border-radius: 16px;
+      overflow-x: auto;
+      border: 1px solid var(--border-subtle);
+      background: #060607;
+      contain: layout style;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      text-align: left;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #0c0c0e;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 12px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #e4e4e7;
+      min-width: 165px;
+      white-space: nowrap;
+    }
+
+    th.meta {
+      min-width: 120px;
+      text-align: left;
+    }
+
+    th.meta-right {
+      min-width: 72px;
+      text-align: right;
+    }
+
+    tbody tr {
+      background: rgba(14, 14, 16, 0.92);
+      content-visibility: auto;
+      contain-intrinsic-size: auto 38px;
+    }
+
+    tbody tr:hover {
+      background: rgba(28, 28, 32, 0.96);
+    }
+
+    tbody tr.row-done {
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    td {
+      border-right: 1px solid var(--border-faint);
+      border-bottom: 1px solid var(--border-faint);
+      padding: 7px 12px;
+      font-size: 12px;
+      vertical-align: middle;
+      user-select: none;
+    }
+
+    td.checkable {
+      cursor: pointer;
+    }
+
+    td.empty {
+      opacity: 0.28;
+    }
+
+    td.meta {
+      text-align: left;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    td.meta-right {
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .cell-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .cell-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .cell-inner input {
+      accent-color: #fff;
+      margin: 0;
+    }
+
+    .cell-done {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .divider {
+      border-top: 1px solid var(--border-faint);
+      padding-top: 12px;
+      margin-top: 12px;
+    }
+
+    /* Panel Notas Dex */
+    .audit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .audit-item {
+      padding: 12px;
+      border-radius: 14px;
+      background: #070708;
+      border: 1px solid var(--border-faint);
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    .audit-item strong {
+      display: block;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: #111113;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
+      opacity: 0;
+      transform: translateY(16px);
+      pointer-events: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Scrollbar sutil */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #070708;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 14px 10px 48px; }
+      .card { padding: 14px; border-radius: 18px; }
+      h1 { font-size: 21px; }
+      .input { width: 100%; min-width: 0; }
+      .search-wrap { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <!-- Barra superior sticky -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="pokeball"><div class="pokeball-inner"></div></div>
+        <strong style="font-size:16px;letter-spacing:-0.02em">ALT DEX</strong>
+        <span style="opacity:.3">/</span>
+        <span class="badge">
+          <span class="dot-live"></span>
+          <span>Pokédex Tracker • Verificado con Dex de PokeMMO</span>
+        </span>
+      </div>
+      <div class="flex-row">
+        <button type="button" class="btn" id="btn-audit">Notas Dex (3)</button>
+        <button type="button" class="btn" id="btn-scroll">Ir a Tabla ↓</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Panel desplegable de Notas Dex -->
+    <section id="dex-audit-panel" class="card hidden">
+      <div class="flex-between">
+        <strong style="font-size:14px">Auditoría realizada contra la Pokédex de PokeMMO</strong>
+        <button type="button" class="btn" id="btn-close-audit">Cerrar ✕</button>
+      </div>
+      <div class="audit-grid">
+        <div class="audit-item">
+          <strong>#374 Beldum (Hoenn — Meteor Falls)</strong>
+          Aparece en encuentro individual normal (<span style="color:#fff;font-weight:600">5% sin Lure</span>) en la sala noroeste de Meteor Falls (Nv. 50–52).
+        </div>
+        <div class="audit-item">
+          <strong>#570 Zorua (Unova — Lostlorn Forest)</strong>
+          No sale en singular en el bosque; aparece disfrazado por <em>Ilusión</em> en manadas x3 de Lostlorn Forest (usa <em>Gas Reactivo</em>) o en <em>Swarms</em> / cría.
+        </div>
+        <div class="audit-item">
+          <strong>#407 Roselia (Amistad desde Budew)</strong>
+          Budew evoluciona a Roselia por alta amistad <span style="color:#fff;font-weight:600">durante el día (Day)</span>.
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel de progreso, selector de columnas y filtros -->
+    <section class="card">
+      <div class="flex-between">
+        <div>
+          <span class="badge" style="font-size:10px;letter-spacing:0.05em">POKEMMO • ENCUENTROS INDIVIDUALES • GUARDADO AUTOMÁTICO</span>
+          <h1>Pokédex Tracker PokeMMO</h1>
+          <p class="sub">Rutas, señuelos (Lure), cañas, golpe roca, miel, fenómenos y evoluciones comprobados con la Pokédex de PokeMMO.</p>
+        </div>
+
+        <div class="flex-row">
+          <div class="progress-box">
+            <div class="flex-between" style="font-size:12px;font-weight:800">
+              <span style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Progreso Total</span>
+              <span>
+                <span id="done-count">0</span> / <span id="total-count">0</span>
+                <span id="done-pct" style="color:var(--text-muted);font-family:monospace">(0%)</span>
+              </span>
+            </div>
+            <div class="progress-track">
+              <div id="progress-bar" class="progress-fill"></div>
+            </div>
+          </div>
+          <button type="button" class="btn" id="btn-uncheck-all">Desmarcar todo</button>
+        </div>
+      </div>
+
+      <!-- Barra de columnas -->
+      <div class="divider flex-between">
+        <span id="active-cols-label" style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">
+          19 Columnas Activas • Clic en cualquier celda para marcar
+        </span>
+        <button type="button" class="btn" id="btn-toggle-cols">Columnas personalizadas ▾</button>
+      </div>
+
+      <div id="column-picker-panel" class="hidden" style="margin-top:12px;padding:12px;border-radius:14px;background:#070708;border:1px solid var(--border-subtle)">
+        <div class="flex-between" style="margin-bottom:8px">
+          <span style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase">Mostrar / Ocultar Columnas</span>
+          <button type="button" class="btn" id="btn-show-all-cols" style="padding:4px 10px">Mostrar todas</button>
+        </div>
+        <div id="column-picker-grid" class="flex-row"></div>
+      </div>
+
+      <!-- Buscador y filtros -->
+      <div class="divider flex-between">
+        <div class="flex-row" style="flex:1">
+          <div class="search-wrap">
+            <input id="matrix-search" class="input" type="text" placeholder="Buscar Pokémon, ruta o nivel..." />
+            <button type="button" id="clear-search-btn" class="clear-btn hidden" title="Limpiar búsqueda">✕</button>
+          </div>
+
+          <div class="seg-group" id="status-filter-group" role="group" aria-label="Filtro de estado">
+            <button type="button" class="seg-btn active" data-filter="all">Todos</button>
+            <button type="button" class="seg-btn" data-filter="pending">Faltantes</button>
+            <button type="button" class="seg-btn" data-filter="done">Completados</button>
+          </div>
+
+          <select id="method-filter" class="select" aria-label="Filtrar por método individual">
+            <option value="all">Método Individual: Todos</option>
+            <option value="lure">Señuelo (Lure)</option>
+            <option value="rod">Pesca (Good / Super Rod)</option>
+            <option value="water">Surf / Agua</option>
+            <option value="time">Horario (Día / Noche / 3 AM)</option>
+            <option value="rock">Golpe Roca (Rock Smash)</option>
+          </select>
+
+          <select id="breed-item-filter" class="select" aria-label="Filtrar por objeto de cría o incienso">
+            <option value="all">Cría / Inciensos: Todos</option>
+            <option value="any_incense">Solo Inciensos (Breed Downs)</option>
+            <option value="none">Sin objeto (None)</option>
+            <option value="sea incense">Sea Incense (Azurill)</option>
+            <option value="lax incense">Lax Incense (Wynaut)</option>
+            <option value="rose incense">Rose Incense (Budew)</option>
+            <option value="pure incense">Pure Incense (Chingling)</option>
+            <option value="rock incense">Rock Incense (Bonsly)</option>
+            <option value="odd incense">Odd Incense (Mime Jr.)</option>
+            <option value="luck incense">Luck Incense (Happiny)</option>
+            <option value="full incense">Full Incense (Munchlax)</option>
+            <option value="wave incense">Wave Incense (Mantyke)</option>
+          </select>
+        </div>
+        <span id="visible-rows-counter" style="font-size:12px;font-family:monospace;color:var(--text-muted)">Mostrando 0 filas</span>
+      </div>
+    </section>
+
+    <!-- Tabla matriz -->
+    <section id="matrix-section" class="card" style="padding:10px">
+      <div class="matrix-wrapper">
+        <table>
+          <thead id="matrix-thead"></thead>
+          <tbody id="matrix-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast de notificación -->
+  <div id="toast-banner" class="toast">
+    <span class="dot-live"></span>
+    <span id="toast-message">Guardado</span>
+  </div>
+
+  <script>
+    const STORAGE_KEY_CHECKS = 'alt_dex_pokemmo_checks_v3';
+    const STORAGE_KEY_VISIBLE_COLS = 'alt_dex_pokemmo_cols_v3';
+
+    const COLUMNS_SPEC = [
+      { key: 'kanto', label: 'Kanto', hasCheckbox: true },
+      { key: 'johto', label: 'Johto', hasCheckbox: true },
+      { key: 'hoenn', label: 'Hoenn', hasCheckbox: true },
+      { key: 'sinnoh', label: 'Sinnoh', hasCheckbox: true },
+      { key: 'honeyList', label: 'Honey List', hasCheckbox: true },
+      { key: 'unova', label: 'Unova', hasCheckbox: true },
+      { key: 'levellingService', label: 'Levelling Service', hasCheckbox: true },
+      { key: 'level', label: 'Level', isMeta: true, alignRight: true },
+      { key: 'lvlOnce', label: 'Lvl Once', hasCheckbox: true },
+      { key: 'stoneItemEvos', label: 'Stone/Item Evos', hasCheckbox: true },
+      { key: 'stoneRequired', label: 'Stone Required', isMeta: true },
+      { key: 'tradeEvos', label: 'Trade Evos', hasCheckbox: true },
+      { key: 'levelupGimmick', label: 'Levelup with gimmick', hasCheckbox: true },
+      { key: 'gimmickRequired', label: 'Gimmick Required', isMeta: true },
+      { key: 'friendshipEvos', label: 'Friendship Evos', hasCheckbox: true },
+      { key: 'friendshipReq', label: 'Friendship Req', isMeta: true },
+      { key: 'breedDowns', label: 'Breed Downs', hasCheckbox: true },
+      { key: 'heldItem', label: 'Held item?', isMeta: true },
+      { key: 'phenos', label: 'Phenos', hasCheckbox: true }
+    ];
+
+    /* KANTO (PokeMMO — encuentros individuales verificados) */
+    const KANTO_LIST = [
+      'Viridian Forest', 'Caterpie', 'Weedle', 'Pidgey', 'Oddish x2', 'Bellsprout', 'Bulbasaur (Lure)',
+      'Route 24 (Arena Trap)', 'Squirtle (Lure)', 'Meowth', 'Psyduck', 'Abra', 'Route 3', 'Rattata',
+      'Spearow', 'Ekans', 'Sandshrew', 'Nidoran M', 'Nidoran F', 'Jigglypuff', 'Mankey',
+      'Charmander (Lure)', 'Five Isle Meadow', 'Sentret', 'Hoppip', 'Slowpoke x2', 'Togetic (Lure)',
+      'Five Island (Super Rod)', 'Shellder', 'Krabby', 'Horsea', 'Mt. Moon', 'Paras (2F)',
+      'Geodude', 'Berry Forest', 'Venonat', 'Drowzee', 'Exeggcute', 'Munchlax', 'Route 16', 'Grimer',
+      'Doduo', 'Icefall Cave', 'Swinub', 'Icefall Cave (Water)', 'Wooper', 'Tentacool (Back Room)',
+      'Seel', 'Lapras (Back Room)', 'Power Plant', 'Pikachu', 'Voltorb', 'Koffing', 'Electabuzz',
+      'Safari Zone (Entrance)', 'Chansey', 'Victory Road (Final Room)', 'Hitmonlee', 'Rhyhorn',
+      'Victory Road (2F)', 'Hitmonchan', 'Game Corner', 'Clefairy', 'Scyther', 'Pinsir', 'Porygon',
+      'Eevee', 'Sevault Canyon', 'Cubone', 'Phanpy', 'Larvitar', 'Skarmory', 'Route 12 (Super Rod)',
+      'Goldeen', 'Qwilfish', 'Ruin Valley', 'Yanma', 'Wobbuffet', 'Lost Cave', 'Murkrow',
+      'Misdreavus', 'Three Isle Port', 'Dunsparce'
+    ];
+
+    /* JOHTO (PokeMMO — encuentros individuales verificados) */
+    const JOHTO_LIST = [
+      'Route 31 (Night)', 'Hoothoot', 'Spinarak', 'Zubat', 'Poliwag x2', 'Chikorita (Lure)', 'Route 32',
+      'Mareep', 'Totodile (Lure)', 'Route 33', 'Cyndaquil (Lure)', 'Route 48', 'Vulpix', 'Growlithe', 'Diglett',
+      'Girafarig', 'Tauros', 'Route 38 (Day)', 'Farfetchd', 'Magnemite', 'Snubbull', 'Miltank',
+      'Cliff Cave', 'Onix', 'Kangaskhan', 'Union Cave', 'Tyrogue', 'Dragons Den (Water)', 'Dratini',
+      'Route 47 (Super Rod)', 'Chinchou', 'Luvdisc', 'Ruins of Alph', 'Smeargle', 'Natu',
+      'Olivine City (Super Rod)', 'Corsola', 'Route 37', 'Stantler', 'Pineco', 'Route 45', 'Slugma'
+    ];
+
+    /* HOENN (PokeMMO — encuentros individuales verificados) */
+    const HOENN_LIST = [
+      'Petalburg Woods', 'Poochyena', 'Zigzagoon', 'Wurmple', 'Silcoon', 'Cascoon', 'Shroomish',
+      'Slakoth', 'Treecko (Lure)', 'Petalburg City (Super Rod)', 'Corphish', 'Route 104', 'Wingull',
+      'Taillow', 'Mudkip (Lure)', 'Route 112', 'Marill', 'Machop', 'Numel', 'Torchic (Lure)',
+      'Meteor Falls (NW Room)', 'Solrock', 'Lunatone', 'Bagon', 'Beldum (5% Single)', 'Desert Underpass',
+      'Ditto', 'Whismur', 'Route 116', 'Nincada', 'Skitty', 'Safari Zone (Hoenn)',
+      'Houndour', 'Ledyba', 'Aipom', 'Shuckle (Rock Smash)', 'Teddiursa', 'Sunkern', 'Surskit',
+      'Route 102', 'Seedot', 'Lotad', 'Ralts x2 (One Male)', 'Route 110', 'Plusle',
+      'Minun', 'Electrike', 'Gulpin', 'Route 119 (Super Rod)', 'Carvanha', 'Feebas',
+      'Route 120', 'Kecleon', 'Absol', 'Tropius', 'Mt. Pyre', 'Shuppet (1F)',
+      'Chingling (1F)', 'Duskull (2F)', 'Route 111', 'Baltoy', 'Cacnea',
+      'Trapinch', 'Jagged Pass', 'Spoink', 'Granite Cave (2F)', 'Makuhita', 'Aron',
+      'Sableye', 'Nosepass (Rock Smash)', 'Route 117 (Night)', 'Volbeat', 'Illumise',
+      'Sootopolis City (Super Rod)', 'Wailmer', 'Route 113', 'Spinda', 'Route 114 (Morning - Day)',
+      'Swablu', 'Shoal Cave (3 AM)', 'Snorunt (Both Gender)', 'Spheal', 'Underwater (Route 126)',
+      'Relicanth', 'Clamperl (Both Gender)', 'Torkoal (Fiery Path)', 'Koffing (Fiery Path)',
+      'Grimer (Fiery Path)', 'Route 118 (Good Rod)', 'Tentacool', 'Magikarp', 'Route 121',
+      'Gloom', 'Route 123', 'Roselia', 'Victory Road (Hoenn)', 'Hariyama', 'Lairon',
+      'Medicham', 'Mawile', 'New Mauville', 'Voltorb', 'Magnemite', 'Route 103 (Water)',
+      'Pelipper', 'Route 105 (Super Rod)', 'Wailord', 'Seafloor Cavern', 'Zubat',
+      'Golbat', 'Sky Pillar', 'Claydol', 'Banette', 'Altaria', 'Sableye (Sky Pillar)',
+      'Route 132 (Water)', 'Horsea', 'Seadra'
+    ];
+
+    /* SINNOH (PokeMMO — encuentros individuales verificados) */
+    const SINNOH_LIST = [
+      'Route 208', 'Bidoof', 'Budew', 'Stunky (Night)', 'Meditite', 'Ralts x2 (One Male)',
+      'Turtwig (Lure)', 'Route 211', 'Bronzor', 'Ponyta', 'Route 214', 'Chimchar (Lure)',
+      'Route 213 (Morning)', 'Buizel', 'Shellos', 'Piplup (Lure)', 'Chatot', 'Eterna Forest', 'Buneary',
+      'Old Chateau', 'Gastly', 'Rotom (Lure)', 'Route 205 (Good Rod)', 'Magikarp', 'Finneon', 'Barboach',
+      'Fuego Ironworks', 'Shinx', 'Pachirisu', 'Magmar', 'Route 209', 'Starly', 'Happiny',
+      'Mr. Mime', 'Sudowoodo', 'Sunyshore City (Good Rod)', 'Remoraid', 'Solaceon Ruins', 'Unown',
+      'Route 201 (Night/Morn)', 'Kricketot', 'Great Marsh', 'Carnivine', 'Skorupi', 'Croagunk',
+      'Valley Windworks (Night)', 'Drifloon', 'Route 218', 'Glameow', 'Turnback Cave',
+      'Spiritomb (Rock Smash)', 'Wayward Cave', 'Gible', 'Route 207', 'Hippopotas',
+      'Route 217', 'Snover', 'Mt. Coronet', 'Clefairy', 'Chingling'
+    ];
+
+    /* HONEY LIST (PokeMMO — árboles de miel) */
+    const HONEY_LIST = [
+      'Heracross', 'Burmy (Both Gender)', 'Combee (F)', 'Cherubi',
+      'Munchlax (Honey Tree)', 'Aipom (Honey Tree)'
+    ];
+
+    /* UNOVA (PokeMMO — encuentros individuales verificados) */
+    const UNOVA_LIST = [
+      'Pinwheel Forest', 'Pansage', 'Pansear', 'Panpour', 'Pidove', 'Sewaddle', 'Venipede',
+      'Petilil', 'Cottonee', 'Snivy (Lure)', 'Outside Pinwheel Forest', 'Tympole', 'Sawk', 'Throh',
+      'Cold Storage', 'Timburr', 'Minccino', 'Vanillite', 'Route 6', 'Oshawott (Lure)', 'Route 3', 'Patrat',
+      'Lillipup', 'Purrloin', 'Blitzle', 'Tepig (Lure)', 'Challengers Cave', 'Woobat', 'Lickitung',
+      'Riolu', 'Mawile', 'Giant Chasm (Cave)', 'Jynx', 'Delibird', 'Sneasel (Night)', 'Route 11',
+      'Karrablast', 'Pawniard', 'Rufflet (Morning - Day)', 'Vullaby', 'Zangoose', 'Seviper',
+      'Gligar', 'Undella Bay (Water)', 'Mantine', 'Staryu', 'Spheal', 'Route 16', 'Solosis',
+      'Gothita', 'Trubbish', 'Tangela', 'Lostlorn Forest', 'Zorua (Illusion / Swarm)', 'Desert Resort',
+      'Sandile', 'Darumaka', 'Maractus', 'Dwebble', 'Scraggy', 'Sigilyph',
+      'Relic Castle (Top Left)', 'Yamask', 'Wellspring Cave', 'Roggenrolla',
+      'Dreamyard', 'Munna', 'Chargestone Cave', 'Ferroseed (Top Room)',
+      'Klink (Top Room)', 'Joltik (Top Room)', 'Tynamo (2.5%-10%)', 'Route 6 (Grass)',
+      'Deerling', 'Foongus', 'Shelmet', 'Twist Mountain',
+      'Cubchoo', 'Cryogonal', 'Mistralton Cave', 'Axew', 'Celestial Tower', 'Litwick (2F)',
+      'Elgyem (Roof)', 'Icirrus City', 'Stunfisk', 'Victory Road (1F)', 'Mienfoo',
+      'Durant', 'Deino', 'Victory Road (Outside)', 'Heatmor', 'Relic Castle (Bottom)',
+      'Larvesta', 'Dragonspiral Tower (1F)',
+      'Druddigon', 'Golett', 'Route 10', 'Bouffalant', 'Driftveil City (Water)', 'Frillish',
+      'Striaton City (Water)', 'Basculin'
+    ];
+
+    /* LEVELLING SERVICE & LEVEL */
+    const LEVELLING_PAIRS = [
+      ['Bulbasaur', 31], ['Charmander', 35], ['Squirtle', 35], ['Caterpie', 9], ['Weedle', 9],
+      ['Pidgey', 35], ['Rattata', 20], ['Spearow', 20], ['Ekans', 22], ['Sandshrew', 22],
+      ['Nidoran♀', 16], ['Nidoran♂', 16], ['Zubat', 22], ['Oddish x2', 21], ['Paras', 24],
+      ['Venonat', 31], ['Diglett', 26], ['Meowth', 28], ['Psyduck', 33], ['Mankey', 28],
+      ['Poliwag x2', 25], ['Abra', 16], ['Machop', 28], ['Bellsprout', 21], ['Tentacool', 30],
+      ['Geodude', 25], ['Ponyta', 40], ['Slowpoke', 37], ['Magnemite', 30], ['Doduo', 31],
+      ['Seel', 34], ['Grimer', 38], ['Gastly', 25], ['Drowzee', 26], ['Krabby', 28],
+      ['Voltorb', 30], ['Cubone', 28], ['Koffing', 35], ['Rhyhorn', 42], ['Horsea', 32],
+      ['Goldeen', 33], ['Magikarp', 20], ['Omanyte', 40], ['Kabuto', 40], ['Dratini', 54],
+      ['Chikorita', 31], ['Cyndaquil', 35], ['Totodile', 29], ['Sentret', 15], ['Hoothoot', 20],
+      ['Ledyba', 18], ['Spinarak', 22], ['Chinchou', 27], ['Natu', 25], ['Mareep', 29],
+      ['Marill', 18], ['Hoppip', 18], ['Wooper', 20], ['Pineco', 31], ['Snubbull', 23],
+      ['Teddiursa', 30], ['Slugma', 38], ['Swinub', 33], ['Remoraid', 25], ['Houndour', 24],
+      ['Phanpy', 25], ['Larvitar', 54], ['Treecko', 35], ['Torchic', 35], ['Mudkip', 35],
+      ['Poochyena', 18], ['Zigzagoon', 20], ['Silcoon', 10], ['Cascoon', 10], ['Lotad', 14],
+      ['Seedot', 14], ['Taillow', 22], ['Wingull', 25], ['Ralts (F to 30, M to 20)', '<-'],
+      ['Surskit', 22], ['Shroomish', 23], ['Slakoth', 18], ['Whismur', 20], ['Makuhita', 24],
+      ['Aron', 41], ['Meditite', 37], ['Electrike', 26], ['Gulpin', 26], ['Carvanha', 30],
+      ['Wailmer', 40], ['Numel', 33], ['Spoink', 32], ['Trapinch', 44], ['Cacnea', 32],
+      ['Swablu', 35], ['Barboach', 30], ['Corphish', 30], ['Baltoy', 36], ['Lileep', 40],
+      ['Anorith', 40], ['Shuppet', 37], ['Duskull', 37], ['Snorunt (Male)', 42], ['Spheal', 43],
+      ['Bagon', 49], ['Beldum', 44], ['Turtwig', 31], ['Chimchar', 35], ['Piplup', 35],
+      ['Starly', 33], ['Bidoof', 15], ['Kricketot', 10], ['Shinx', 29], ['Cranidos', 30],
+      ['Shieldon', 30], ['Burmy (Both Gender)', 20], ['Combee (F)', 21], ['Buizel', 26],
+      ['Cherubi', 25], ['Shellos', 30], ['Drifloon', 28], ['Glameow', 38], ['Stunky', 34],
+      ['Bronzor', 33], ['Gible', 47], ['Hippopotas', 34], ['Skorupi', 40], ['Croagunk', 37],
+      ['Finneon', 31], ['Snover', 40], ['Snivy', 35], ['Tepig', 35], ['Oshawott', 35],
+      ['Patrat', 20], ['Lillipup', 31], ['Purrloin', 20], ['Pidove', 31], ['Blitzle', 27],
+      ['Roggenrola', 25], ['Timburr', 25], ['Tympole', 35], ['Sewaddle', 20], ['Venipede', 22],
+      ['Sandile', 39], ['Darumaka', 35], ['Dwebble', 34], ['Scraggy', 39], ['Yamask', 34],
+      ['Tirtouga', 37], ['Archen', 37], ['Trubbish', 36], ['Zorua', 30], ['Gothita', 40],
+      ['Solosis', 40], ['Vanillite', 46], ['Deerling', 34], ['Foongus', 39], ['Frillish', 40],
+      ['Joltik', 36], ['Ferroseed', 40], ['Klink', 48], ['Tynamo', 39], ['Elgyem', 42],
+      ['Litwick', 41], ['Axew', 47], ['Cubchoo', 37], ['Mienfoo', 50], ['Golett', 43],
+      ['Pawniard', 52], ['Rufflet', 54], ['Vullaby', 54], ['Deino', 63], ['Larvesta', 59]
+    ];
+
+    /* LVL ONCE */
+    const LVL_ONCE_LIST = [
+      'Ivysaur', 'Charmeleon', 'Wartortle', 'Metapod', 'Kakuna', 'Pidgeotto', 'Dragonair',
+      'Bayleef', 'Quilava', 'Croconaw', 'Flaaffy', 'Skiploom', 'Pupitar', 'Grovyle',
+      'Combusken', 'Marshtomp', 'Female Kirlia', 'Vigoroth', 'Loudred', 'Lairon', 'Vibrava',
+      'Shelgon', 'Metang', 'Grotle', 'Monferno', 'Prinplup', 'Staravia', 'Luxio',
+      'Gabite', 'Servine', 'Pignite', 'Dewott', 'Herdier', 'Tranquill', 'Boldore',
+      'Gurdurr', 'Palpitoad', 'Swadloon', 'Whirlipede', 'Krokorok', 'Duosion', 'Gothorita',
+      'Vanillish', 'Klang', 'Eelektrik', 'Fraxure', 'Zweilous'
+    ];
+
+    /* STONE / ITEM EVOS (pares [Pokémon, Piedra/Objeto requerido]) */
+    const STONE_ITEM_EVOS = [
+      ['Pikachu', 'Thunder Stone'], ['Nidorina', 'Moon Stone'], ['Nidorino', 'Moon Stone'], ['Clefairy', 'Moon Stone'],
+      ['Vulpix', 'Fire Stone'], ['Jigglypuff', 'Moon Stone'], ['Gloom (Vileplume)', 'Leaf Stone'], ['Gloom (Bellossom)', 'Sun Stone'],
+      ['Poliwhirl (Poliwrath)', 'Water Stone'], ['Weepinbell', 'Leaf Stone'], ['Shellder', 'Water Stone'], ['Exeggcute', 'Leaf Stone'],
+      ['Staryu', 'Water Stone'], ['Eevee (Vaporeon)', 'Water Stone'], ['Eevee (Jolteon)', 'Thunder Stone'], ['Eevee (Flareon)', 'Fire Stone'],
+      ['Sunkern', 'Sun Stone'], ['Murkrow', 'Dusk Stone'], ['Misdreavus', 'Dusk Stone'], ['Lombre', 'Water Stone'],
+      ['Nuzleaf', 'Leaf Stone'], ['Skitty', 'Moon Stone'], ['Roselia', 'Shiny Stone'], ['Snorunt (Female - Froslass)', 'Dawn Stone'],
+      ['Kirlia (Male - Gallade)', 'Dawn Stone'], ['Togetic', 'Shiny Stone'], ['Pansage', 'Leaf Stone'], ['Pansear', 'Fire Stone'],
+      ['Panpour', 'Water Stone'], ['Munna', 'Moon Stone'], ['Minccino', 'Shiny Stone'], ['Eelektrik', 'Thunder Stone'],
+      ['Lampent', 'Dusk Stone'], ['Cottonee', 'Sun Stone'], ['Petilil', 'Sun Stone'], ['Gligar (Night)', 'Razor Fang'],
+      ['Sneasel (Night)', 'Razor Claw']
+    ];
+
+    /* TRADE EVOS */
+    const TRADE_EVOS = [
+      'Kadabra', 'Machoke', 'Graveler', 'Haunter', "Poliwhirl (King's Rock)", "Slowpoke (King's Rock)",
+      'Onix (Metal Coat)', 'Scyther (Metal Coat)', 'Seadra (Dragon Scale)', 'Porygon (Up-Grade)', 'Porygon2 (Dubious Disc)',
+      'Clamperl (Deep Sea Tooth)', 'Clamperl (Deep Sea Scale)', 'Rhydon (Protector)', 'Electabuzz (Electirizer)',
+      'Magmar (Magmarizer)', 'Dusclops (Reaper Cloth)', 'Feebas (Prism Scale)', 'Boldore', 'Gurdurr',
+      'Karrablast (w/ Shelmet)', 'Shelmet (w/ Karrablast)'
+    ];
+
+    /* LEVELUP WITH GIMMICK (pares [Pokémon, Requisito]) */
+    const GIMMICK_EVOS = [
+      ['Eevee (Leafeon)', 'Moss Rock (Pinwheel / Eterna)'], ['Eevee (Glaceon)', 'Ice Rock (Twist Mt / Rt 217)'],
+      ['Magneton', 'Magnetic Field (Chargestone / Mt. Coronet)'], ['Nosepass', 'Magnetic Field (Chargestone / Mt. Coronet)'],
+      ['Lickitung', 'Knows Rollout'], ['Tangela', 'Knows Ancient Power'], ['Yanma', 'Knows Ancient Power'],
+      ['Piloswine', 'Knows Ancient Power'], ['Aipom', 'Knows Double Hit'], ['Bonsly', 'Knows Mimic'],
+      ['Mime Jr.', 'Knows Mimic'], ['Mantyke', 'Remoraid in Party'], ['Tyrogue (Hitmonlee)', 'Atk > Def (Lv 20)'],
+      ['Tyrogue (Hitmonchan)', 'Def > Atk (Lv 20)'], ['Tyrogue (Hitmontop)', 'Atk = Def (Lv 20)'],
+      ['Nincada (Shedinja)', 'Empty Slot + Poké Ball (Lv 20)'], ['Inkay', 'Lv 30']
+    ];
+
+    /* FRIENDSHIP EVOS (pares [Pokémon, Condición]) */
+    const FRIENDSHIP_EVOS = [
+      ['Golbat', 'High Friendship'], ['Chansey', 'High Friendship'], ['Eevee (Espeon)', 'Friendship + Day'],
+      ['Eevee (Umbreon)', 'Friendship + Night'], ['Pichu', 'High Friendship'], ['Cleffa', 'High Friendship'],
+      ['Igglybuff', 'High Friendship'], ['Togepi', 'High Friendship'], ['Azurill', 'High Friendship'],
+      ['Budew', 'Friendship + Day'], ['Buneary', 'High Friendship'], ['Chingling', 'Friendship + Night'],
+      ['Munchlax', 'High Friendship'], ['Riolu', 'Friendship + Day'], ['Woobat', 'High Friendship'],
+      ['Swadloon', 'High Friendship']
+    ];
+
+    /* BREED DOWNS (pares [Cría, Objeto equipado]) */
+    const BREED_DOWNS = [
+      ['Azurill', 'Sea Incense'], ['Wynaut', 'Lax Incense'], ['Budew', 'Rose Incense'], ['Chingling', 'Pure Incense'],
+      ['Bonsly', 'Rock Incense'], ['Mime Jr.', 'Odd Incense'], ['Happiny', 'Luck Incense'], ['Munchlax', 'Full Incense'],
+      ['Mantyke', 'Wave Incense'], ['Pichu', 'None'], ['Cleffa', 'None'], ['Igglybuff', 'None'],
+      ['Togepi', 'None'], ['Tyrogue', 'None'], ['Smoochum', 'None'], ['Elekid', 'None'], ['Magby', 'None'], ['Riolu', 'None']
+    ];
+
+    /* PHENOS */
+    const PHENOS_LIST = [
+      'Drilbur (Dust Cloud)', 'Excadrill (Dust Cloud)', 'Audino (Rustling Grass)', 'Emolga (Rustling Grass)',
+      'Alomomola (Rippling Water)', 'Ducklett (Flying Shadow)', 'Swanna (Flying Shadow)', 'Stunfisk (Rippling Water)'
+    ];
+
+    const CHECK_KEYS = COLUMNS_SPEC.filter(c => c.hasCheckbox).map(c => c.key);
+    let totalCheckboxes = 0;
+    let doneCheckboxes = 0;
+
+    // Precalculamos filas e índice de búsqueda (_searchBlob) una sola vez
+    const ROWS = (() => {
+      const maxLen = Math.max(
+        KANTO_LIST.length, JOHTO_LIST.length, HOENN_LIST.length,
+        SINNOH_LIST.length, HONEY_LIST.length, UNOVA_LIST.length,
+        LEVELLING_PAIRS.length, LVL_ONCE_LIST.length, STONE_ITEM_EVOS.length,
+        TRADE_EVOS.length, GIMMICK_EVOS.length, FRIENDSHIP_EVOS.length,
+        BREED_DOWNS.length, PHENOS_LIST.length
+      );
+      const list = new Array(maxLen);
+      for (let i = 0; i < maxLen; i++) {
+        const lvlPair = LEVELLING_PAIRS[i] || ['', ''];
+        const stonePair = STONE_ITEM_EVOS[i] || ['', ''];
+        const gimmickPair = GIMMICK_EVOS[i] || ['', ''];
+        const friendPair = FRIENDSHIP_EVOS[i] || ['', ''];
+        const breedPair = BREED_DOWNS[i] || ['', ''];
+
+        const row = {
+          id: i,
+          kanto: KANTO_LIST[i] || '',
+          johto: JOHTO_LIST[i] || '',
+          hoenn: HOENN_LIST[i] || '',
+          sinnoh: SINNOH_LIST[i] || '',
+          honeyList: HONEY_LIST[i] || '',
+          unova: UNOVA_LIST[i] || '',
+          levellingService: lvlPair[0] || '',
+          level: lvlPair[1] !== '' ? String(lvlPair[1]) : '',
+          lvlOnce: LVL_ONCE_LIST[i] || '',
+          stoneItemEvos: stonePair[0] || '',
+          stoneRequired: stonePair[1] || '',
+          tradeEvos: TRADE_EVOS[i] || '',
+          levelupGimmick: gimmickPair[0] || '',
+          gimmickRequired: gimmickPair[1] || '',
+          friendshipEvos: friendPair[0] || '',
+          friendshipReq: friendPair[1] || '',
+          breedDowns: breedPair[0] || '',
+          heldItem: breedPair[1] || '',
+          phenos: PHENOS_LIST[i] || '',
+          _searchBlob: '',
+          _heldItemLower: (breedPair[1] || '').toLowerCase()
+        };
+
+        row._searchBlob = (
+          row.kanto + ' ' + row.johto + ' ' + row.hoenn + ' ' + row.sinnoh + ' ' +
+          row.honeyList + ' ' + row.unova + ' ' + row.levellingService + ' ' +
+          row.level + ' ' + row.lvlOnce + ' ' + row.stoneItemEvos + ' ' +
+          row.stoneRequired + ' ' + row.tradeEvos + ' ' + row.levelupGimmick + ' ' +
+          row.gimmickRequired + ' ' + row.friendshipEvos + ' ' + row.friendshipReq + ' ' +
+          row.breedDowns + ' ' + row.heldItem + ' ' + row.phenos
+        ).toLowerCase();
+
+        for (let k = 0; k < CHECK_KEYS.length; k++) {
+          if (row[CHECK_KEYS[k]]) totalCheckboxes++;
+        }
+        list[i] = row;
+      }
+      return list;
+    })();
+
+    let checks = (() => {
+      try {
+        const p = JSON.parse(localStorage.getItem(STORAGE_KEY_CHECKS) || '{}');
+        return (typeof p === 'object' && p !== null) ? p : {};
+      } catch {
+        return {};
+      }
+    })();
+
+    // Conteo inicial O(N) una sola vez al arrancar
+    for (let i = 0; i < ROWS.length; i++) {
+      const r = ROWS[i];
+      for (let k = 0; k < CHECK_KEYS.length; k++) {
+        const key = CHECK_KEYS[k];
+        if (r[key] && checks[r.id + ':' + key]) doneCheckboxes++;
+      }
+    }
+
+    let visibleCols = (() => {
+      try {
+        const p = JSON.parse(localStorage.getItem(STORAGE_KEY_VISIBLE_COLS) || 'null');
+        if (Array.isArray(p) && p.length > 0) return p;
+      } catch {}
+      return COLUMNS_SPEC.map(c => c.key);
+    })();
+
+    let searchQuery = '';
+    let statusFilter = 'all';
+    let methodFilter = 'all';
+    let breedItemFilter = 'all';
+    let searchTimer = null;
+    let toastTimer = null;
+
+    const METHOD_TOKENS = {
+      lure: ['(lure)'],
+      rod: ['rod'],
+      water: ['(water)', 'underwater', 'rippling water'],
+      time: ['(night)', '(day)', '(morning)', '3 am', 'night/morn', 'day', 'night'],
+      rock: ['rock smash']
+    };
+
+    const dom = {
+      thead: document.getElementById('matrix-thead'),
+      tbody: document.getElementById('matrix-tbody'),
+      doneCount: document.getElementById('done-count'),
+      totalCount: document.getElementById('total-count'),
+      donePct: document.getElementById('done-pct'),
+      progressBar: document.getElementById('progress-bar'),
+      rowsCounter: document.getElementById('visible-rows-counter'),
+      colsLabel: document.getElementById('active-cols-label'),
+      pickerPanel: document.getElementById('column-picker-panel'),
+      pickerGrid: document.getElementById('column-picker-grid'),
+      searchInput: document.getElementById('matrix-search'),
+      clearSearchBtn: document.getElementById('clear-search-btn'),
+      toast: document.getElementById('toast-banner'),
+      toastMsg: document.getElementById('toast-message')
+    };
+
+    dom.totalCount.textContent = totalCheckboxes;
+
+    function updateProgressUI() {
+      const pct = totalCheckboxes > 0 ? Math.round((doneCheckboxes / totalCheckboxes) * 100) : 0;
+      dom.doneCount.textContent = doneCheckboxes;
+      dom.donePct.textContent = `(${pct}%)`;
+      dom.progressBar.style.transform = `scaleX(${pct / 100})`;
+    }
+
+    function rowHasAnyCheck(row) {
+      for (let k = 0; k < CHECK_KEYS.length; k++) {
+        const key = CHECK_KEYS[k];
+        if (row[key] && checks[row.id + ':' + key]) return true;
+      }
+      return false;
+    }
+
+    function rowMatches(row) {
+      if (statusFilter !== 'all') {
+        const has = rowHasAnyCheck(row);
+        if (statusFilter === 'done' && !has) return false;
+        if (statusFilter === 'pending' && has) return false;
+      }
+      if (methodFilter !== 'all') {
+        const tokens = METHOD_TOKENS[methodFilter];
+        let matched = false;
+        for (let i = 0; i < tokens.length; i++) {
+          if (row._searchBlob.includes(tokens[i])) {
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) return false;
+      }
+      if (breedItemFilter !== 'all') {
+        if (!row.breedDowns) return false;
+        if (breedItemFilter === 'any_incense') {
+          if (!row._heldItemLower.includes('incense')) return false;
+        } else if (row._heldItemLower !== breedItemFilter) {
+          return false;
+        }
+      }
+      if (searchQuery && !row._searchBlob.includes(searchQuery)) return false;
+      return true;
+    }
+
+    function renderHeader() {
+      const active = COLUMNS_SPEC.filter(c => visibleCols.includes(c.key));
+      let html = '<tr>';
+      for (let i = 0; i < active.length; i++) {
+        const c = active[i];
+        const cls = c.isMeta ? (c.alignRight ? 'meta-right' : 'meta') : '';
+        html += `<th class="${cls}">${c.label}</th>`;
+      }
+      html += '</tr>';
+      dom.thead.innerHTML = html;
+      dom.colsLabel.textContent = `${active.length} Columnas Activas • Clic en cualquier celda para marcar`;
+    }
+
+    function renderBody() {
+      const active = COLUMNS_SPEC.filter(c => visibleCols.includes(c.key));
+      const parts = [];
+      let visibleCount = 0;
+
+      for (let i = 0; i < ROWS.length; i++) {
+        const row = ROWS[i];
+        if (!rowMatches(row)) continue;
+        visibleCount++;
+
+        const doneRow = rowHasAnyCheck(row);
+        parts.push(`<tr data-row="${row.id}" class="${doneRow ? 'row-done' : ''}">`);
+
+        for (let j = 0; j < active.length; j++) {
+          const c = active[j];
+          const val = row[c.key];
+          if (c.hasCheckbox) {
+            if (!val) {
+              parts.push('<td class="empty">—</td>');
+            } else {
+              const checked = Boolean(checks[row.id + ':' + c.key]);
+              parts.push(
+                `<td class="checkable" data-col="${c.key}">` +
+                  `<div class="cell-inner">` +
+                    `<input type="checkbox" ${checked ? 'checked' : ''} tabindex="-1" />` +
+                    `<span class="${checked ? 'cell-done' : ''}">${val}</span>` +
+                  `</div>` +
+                `</td>`
+              );
+            }
+          } else {
+            const cls = c.alignRight ? 'meta-right' : 'meta';
+            parts.push(`<td class="${cls}">${val || '—'}</td>`);
+          }
+        }
+        parts.push('</tr>');
+      }
+
+      dom.tbody.innerHTML = parts.join('');
+      dom.rowsCounter.textContent = `Mostrando ${visibleCount} filas`;
+      updateProgressUI();
+    }
+
+    // Delegación única de eventos en el tbody (O(1))
+    dom.tbody.addEventListener('click', (e) => {
+      const td = e.target.closest('td.checkable');
+      if (!td) return;
+      const tr = td.parentElement;
+      const rowId = Number(tr.dataset.row);
+      const colKey = td.dataset.col;
+      const storageKey = rowId + ':' + colKey;
+
+      const input = td.querySelector('input');
+      const span = td.querySelector('span');
+      const nextState = !checks[storageKey];
+
+      if (nextState) {
+        checks[storageKey] = true;
+        doneCheckboxes++;
+      } else {
+        delete checks[storageKey];
+        doneCheckboxes--;
+      }
+
+      input.checked = nextState;
+      span.classList.toggle('cell-done', nextState);
+      tr.classList.toggle('row-done', rowHasAnyCheck(ROWS[rowId]));
+
+      updateProgressUI();
+      try {
+        localStorage.setItem(STORAGE_KEY_CHECKS, JSON.stringify(checks));
+      } catch {}
+    });
+
+    // Buscador con debounce
+    dom.searchInput.addEventListener('input', (e) => {
+      const raw = e.target.value;
+      dom.clearSearchBtn.classList.toggle('hidden', raw.length === 0);
+      const val = raw.trim().toLowerCase();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchQuery = val;
+        renderBody();
+      }, 90);
+    });
+
+    dom.clearSearchBtn.addEventListener('click', () => {
+      dom.searchInput.value = '';
+      dom.clearSearchBtn.classList.add('hidden');
+      searchQuery = '';
+      renderBody();
+    });
+
+    document.getElementById('status-filter-group').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      statusFilter = btn.dataset.filter;
+      document.querySelectorAll('#status-filter-group .seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+      renderBody();
+    });
+
+    document.getElementById('method-filter').addEventListener('change', (e) => {
+      methodFilter = e.target.value;
+      renderBody();
+    });
+
+    document.getElementById('breed-item-filter').addEventListener('change', (e) => {
+      breedItemFilter = e.target.value;
+      renderBody();
+    });
+
+    document.getElementById('btn-uncheck-all').addEventListener('click', () => {
+      checks = {};
+      doneCheckboxes = 0;
+      try {
+        localStorage.setItem(STORAGE_KEY_CHECKS, '{}');
+      } catch {}
+      renderBody();
+      showToast('Todas las casillas desmarcadas');
+    });
+
+    document.getElementById('btn-audit').addEventListener('click', () => {
+      document.getElementById('dex-audit-panel').classList.toggle('hidden');
+    });
+
+    document.getElementById('btn-close-audit').addEventListener('click', () => {
+      document.getElementById('dex-audit-panel').classList.add('hidden');
+    });
+
+    document.getElementById('btn-scroll').addEventListener('click', () => {
+      document.getElementById('matrix-section').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    function renderColumnPicker() {
+      dom.pickerGrid.innerHTML = COLUMNS_SPEC.map(c => {
+        const active = visibleCols.includes(c.key);
+        return `<button type="button" class="btn ${active ? 'btn-active' : ''}" data-toggle-col="${c.key}">${c.label}</button>`;
+      }).join('');
+    }
+
+    document.getElementById('btn-toggle-cols').addEventListener('click', () => {
+      dom.pickerPanel.classList.toggle('hidden');
+      if (!dom.pickerPanel.classList.contains('hidden')) renderColumnPicker();
+    });
+
+    dom.pickerGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-toggle-col]');
+      if (!btn) return;
+      const key = btn.dataset.toggleCol;
+      if (visibleCols.includes(key)) {
+        if (visibleCols.length === 1) return;
+        visibleCols = visibleCols.filter(k => k !== key);
+      } else {
+        visibleCols.push(key);
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY_VISIBLE_COLS, JSON.stringify(visibleCols));
+      } catch {}
+      renderColumnPicker();
+      renderHeader();
+      renderBody();
+    });
+
+    document.getElementById('btn-show-all-cols').addEventListener('click', () => {
+      visibleCols = COLUMNS_SPEC.map(c => c.key);
+      try {
+        localStorage.setItem(STORAGE_KEY_VISIBLE_COLS, JSON.stringify(visibleCols));
+      } catch {}
+      renderColumnPicker();
+      renderHeader();
+      renderBody();
+    });
+
+    function showToast(msg) {
+      dom.toastMsg.textContent = msg;
+      dom.toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => dom.toast.classList.remove('show'), 1800);
+    }
+
+    renderHeader();
+    renderBody();
+  </script>
+</body>
+</html>
