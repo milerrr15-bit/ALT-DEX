@@ -1,0 +1,3572 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALT DEX — PokeMMO Capture Spreadsheet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background-color: #121212;
+      color: #efefef;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #121212;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3a3548;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #5b507a;
+    }
+
+    /* Spreadsheet Multi-Column Container */
+    .sheet-board {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px;
+      overflow-x: auto;
+      min-height: calc(100vh - 44px);
+    }
+
+    /* Individual Region Table Block */
+    .region-sheet {
+      flex: 0 0 auto;
+      width: 248px;
+      background-color: #161616;
+      border: 1.5px solid #8a75d6;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+    }
+
+    .region-sheet.wide-fossil {
+      width: 235px;
+    }
+
+    /* Table Grid Structure */
+    .sheet-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .sheet-table th,
+    .sheet-table td {
+      border: 1px solid #3c3c3c;
+      padding: 0 5px;
+      vertical-align: middle;
+    }
+
+    /* Column Widths: Name | INFO | DONE */
+    .col-name {
+      width: auto;
+    }
+    .col-info {
+      width: 38px;
+    }
+    .col-info-fossil {
+      width: 68px;
+    }
+    .col-done {
+      width: 38px;
+    }
+
+    /* Top Region Header */
+    .region-header-row th {
+      background-color: #211d2b;
+      height: 30px;
+      border-bottom: 1.5px solid #8a75d6;
+    }
+
+    .region-title-cell {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: #b4a7d6;
+      text-align: center;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .region-title-cell a {
+      color: inherit;
+      text-decoration: underline;
+    }
+
+    .region-title-cell a:hover {
+      color: #d9d2e9;
+    }
+
+    .meta-col-header {
+      font-size: 10px;
+      font-weight: 800;
+      color: #ffffff;
+      text-align: center;
+      letter-spacing: 0.02em;
+      padding: 0 2px !important;
+    }
+
+    /* Location Subheader */
+    .location-header-row td {
+      background-color: #252131;
+      color: #f1c232;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      height: 21px;
+      border-top: 1px solid #594c7a;
+      border-bottom: 1px solid #594c7a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Pokémon Data Rows */
+    .poke-row {
+      height: 22px;
+      background-color: #161616;
+      transition: background-color 0.1s ease;
+    }
+
+    .poke-row:hover {
+      background-color: #222226;
+    }
+
+    .poke-name-cell {
+      font-size: 11px;
+      font-weight: 500;
+      color: #efefef;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    .poke-link {
+      color: #efefef;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .poke-link:hover {
+      color: #89bfcf;
+    }
+
+    /* INFO Cell Ball Colors matching reference image */
+    .info-cell {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+      padding: 0 2px !important;
+    }
+
+    .ball-QB { color: #ffffff; }
+    .ball-UB { color: #4a9eff; }
+    .ball-NB { color: #6fa8dc; }
+    .ball-GB { color: #6aa84f; }
+    .ball-DB { color: #76a5af; }
+    .ball-FOSSIL { color: #efefef; font-weight: 600; font-size: 10px; }
+    .ball-NONE { color: #888888; }
+    .evo-meta-cell {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #c7c2d8;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 3px !important;
+    }
+    .col-evo-meta {
+      width: 84px;
+    }
+
+    /* DONE Cell & Crisp Square Checkbox */
+    .done-cell {
+      text-align: center;
+      padding: 0 !important;
+      cursor: pointer;
+    }
+
+    .sheet-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border: 1.5px solid #cfcfcf;
+      border-radius: 2px;
+      background-color: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      margin: 0;
+      transition: all 0.1s ease;
+    }
+
+    .sheet-checkbox:hover {
+      border-color: #f1c232;
+    }
+
+    /* YELLOW HIGHLIGHT WHEN CHECKED (MARCADO EN AMARILLO) */
+    .poke-row.is-done {
+      background-color: #f1c232 !important;
+    }
+
+    .poke-row.is-done:hover {
+      background-color: #ffd966 !important;
+    }
+
+    .poke-row.is-done .poke-name-cell,
+    .poke-row.is-done .poke-link,
+    .poke-row.is-done .info-cell,
+    .poke-row.is-done .warn-triangle {
+      color: #111111 !important;
+      font-weight: 700;
+    }
+
+    .poke-row.is-done .sheet-checkbox {
+      background-color: #111111;
+      border-color: #111111;
+    }
+
+    .poke-row.is-done .sheet-checkbox::after {
+      content: '✓';
+      color: #f1c232;
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    /* Inline editable outline in Edit Mode */
+    .edit-mode [contenteditable="true"] {
+      outline: 1px dashed #8a75d6;
+      background-color: rgba(138, 117, 214, 0.15);
+      padding: 0 2px;
+    }
+
+    .edit-mode [contenteditable="true"]:focus {
+      outline: 1.5px solid #f1c232;
+      background-color: #2a2638;
+      color: #ffffff !important;
+    }
+
+    /* =======================================================================
+       TOP GUIDE BANNER & OVERVIEW PANELS (MATCHING REFERENCE SCREENSHOT)
+       ======================================================================= */
+    .guide-wrapper {
+      padding: 10px 10px 2px 10px;
+      overflow-x: auto;
+    }
+
+    .guide-container {
+      min-width: 1120px;
+      background-color: #161616;
+      border: 1.5px solid #8a75d6;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+    }
+
+    .guide-banner-top {
+      background-color: #452e5c;
+      border-bottom: 1.5px solid #8a75d6;
+      padding: 8px 14px 4px 14px;
+      text-align: center;
+      position: relative;
+    }
+
+    .guide-main-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #f1c232;
+      line-height: 1.2;
+    }
+
+    .guide-credits-bar {
+      background-color: #362348;
+      border-bottom: 1.5px solid #8a75d6;
+      padding: 4px 12px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: #f3ecec;
+    }
+
+    .guide-panels-grid {
+      display: grid;
+      grid-template-columns: 1.48fr 1fr;
+      gap: 10px;
+      padding: 10px;
+      background-color: #141414;
+    }
+
+    .guide-left-stack {
+      border: 1px solid #6d5b9c;
+      background-color: #171717;
+    }
+
+    .guide-three-cols {
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr 1.05fr;
+      border-bottom: 1px solid #5c5c5c;
+    }
+
+    .guide-col-box {
+      border-right: 1px solid #5c5c5c;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .guide-col-box:last-child {
+      border-right: none;
+    }
+
+    .guide-panel-header {
+      background-color: #261b33;
+      border-bottom: 1px solid #6d5b9c;
+      color: #f3ecec;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding: 5px 6px;
+      text-transform: uppercase;
+    }
+
+    .subtitles-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      color: #efefef;
+    }
+
+    .subtitles-table td {
+      padding: 4.5px 6px;
+      border-bottom: 1px solid #262626;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .subtitles-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .subtitles-table td:first-child {
+      border-right: 1px solid #303030;
+      width: 52%;
+    }
+
+    .rod-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      color: #efefef;
+    }
+
+    .rod-table td {
+      padding: 5.5px 6px;
+      border-bottom: 1px solid #262626;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .rod-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .rod-table td:first-child {
+      border-right: 1px solid #303030;
+      font-weight: 500;
+    }
+
+    .rod-link {
+      color: #efefef;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .rod-link:hover {
+      color: #f1c232;
+    }
+
+    .notes-body {
+      padding: 10px 8px;
+      font-size: 11.5px;
+      line-height: 1.42;
+      color: #efefef;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .guide-rules-footer {
+      padding: 10px 12px;
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: #efefef;
+      text-align: center;
+      background-color: #161616;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .guide-right-stack {
+      border: 1px solid #6d5b9c;
+      background-color: #171717;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .items-needed-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      color: #efefef;
+      flex: 1;
+    }
+
+    .items-needed-table td {
+      padding: 5.5px 8px;
+      border-bottom: 1px solid #292929;
+      border-right: 1px solid #292929;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .items-needed-table td:last-child {
+      border-right: none;
+    }
+
+    .items-needed-table tr:last-child td {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Minimalist Top Utility Bar -->
+  <header class="sticky top-0 z-30 bg-[#181620] border-b border-[#3c3652] px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+    <div class="flex items-center gap-3">
+      <span class="font-extrabold tracking-wider text-[#b4a7d6] text-sm">ALT DEX</span>
+      <div class="flex items-center gap-2 bg-[#121212] border border-[#3a3a3a] rounded px-2.5 py-0.5">
+        <span class="text-zinc-400">Capturados:</span>
+        <span id="global-progress-text" class="font-bold text-[#f1c232]">0 / 0 (0%)</span>
+        <div class="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden hidden sm:block">
+          <div id="global-progress-bar" class="h-full bg-[#f1c232] transition-all duration-200" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-1.5">
+      <!-- Search Input -->
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Buscar Pokémon o ruta..."
+        class="bg-[#121212] text-white placeholder-zinc-500 border border-[#3c3c3c] focus:border-[#8a75d6] rounded px-2.5 py-1 text-xs outline-none w-40 sm:w-52"
+      />
+
+      <!-- Status Filter -->
+      <select
+        id="status-filter"
+        class="bg-[#121212] text-zinc-200 border border-[#3c3c3c] focus:border-[#8a75d6] rounded px-2 py-1 text-xs outline-none cursor-pointer"
+      >
+        <option value="ALL">Todos</option>
+        <option value="PENDING">Pendientes</option>
+        <option value="DONE">Marcados (Amarillo)</option>
+      </select>
+
+      <!-- Ball Filter -->
+      <select
+        id="ball-filter"
+        class="bg-[#121212] text-zinc-200 border border-[#3c3c3c] focus:border-[#8a75d6] rounded px-2 py-1 text-xs outline-none cursor-pointer"
+      >
+        <option value="ALL">Ball: Todas</option>
+        <option value="QB">QB</option>
+        <option value="UB">UB</option>
+        <option value="DB">DB</option>
+        <option value="GB">GB</option>
+        <option value="NB">NB</option>
+        <option value="FOSSIL">Fósiles</option>
+      </select>
+
+      <!-- Edit Mode Toggle -->
+      <button
+        id="toggle-guide-btn"
+        onclick="toggleGuideBanner()"
+        class="px-2.5 py-1 rounded text-xs font-semibold bg-[#252131] hover:bg-[#342e47] text-[#f1c232] border border-[#594c7a] transition cursor-pointer"
+        title="Mostrar u ocultar la guía superior"
+      >
+        Guía: ON
+      </button>
+
+      <button
+        id="toggle-edit-btn"
+        onclick="toggleEditMode()"
+        class="px-2.5 py-1 rounded text-xs font-semibold bg-[#252131] hover:bg-[#342e47] text-[#b4a7d6] border border-[#594c7a] transition cursor-pointer"
+        title="Activar/desactivar edición de texto y botones para añadir/eliminar filas"
+      >
+        Editar: OFF
+      </button>
+
+      <!-- Add Modal Trigger -->
+      <button
+        onclick="openAddModal()"
+        class="px-2.5 py-1 rounded text-xs font-semibold bg-[#252131] hover:bg-[#342e47] text-[#f1c232] border border-[#594c7a] transition cursor-pointer"
+      >
+        + Añadir
+      </button>
+
+      <!-- Export / Reset -->
+      <button
+        onclick="exportData()"
+        class="px-2 py-1 rounded text-xs bg-[#1e1e1e] hover:bg-zinc-800 text-zinc-300 border border-[#3c3c3c] transition cursor-pointer"
+        title="Descargar respaldo JSON"
+      >
+        Exportar
+      </button>
+      <button
+        onclick="confirmReset()"
+        class="px-2 py-1 rounded text-xs bg-[#1e1e1e] hover:bg-red-950/60 text-zinc-400 hover:text-red-300 border border-[#3c3c3c] transition cursor-pointer"
+        title="Restaurar tabla original"
+      >
+        Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- Top Dex Guide Banner & Overview Panels -->
+  <section id="dex-guide-section" class="guide-wrapper" aria-label="Dex Guide Overview">
+    <div class="guide-container">
+      <div class="guide-banner-top">
+        <h1 class="guide-main-title">WELCOME TO THE DEX GUIDE!</h1>
+      </div>
+      <div class="guide-credits-bar">
+        Guide made by @qpsychop &amp; @re12210 - Credits to Danny - Make a copy to use this guide
+      </div>
+
+      <div class="guide-panels-grid">
+        <!-- Left & Center Stack: SUBTITLES | SUPER RODS LOCATIONS | NOTES + Rules -->
+        <div class="guide-left-stack">
+          <div class="guide-three-cols">
+            <!-- SUBTITLES -->
+            <div class="guide-col-box">
+              <div class="guide-panel-header">SUBTITLES</div>
+              <table class="subtitles-table">
+                <tbody>
+                  <tr>
+                    <td><span class="ball-GB font-bold">GB</span> = Great Ball</td>
+                    <td><span>🌅</span> = Morning</td>
+                  </tr>
+                  <tr>
+                    <td><span class="ball-UB font-bold">UB</span> = Ultra Ball</td>
+                    <td><span>☀️</span> = Day</td>
+                  </tr>
+                  <tr>
+                    <td><span class="ball-DB font-bold">DB</span> = Dusk Ball</td>
+                    <td><span>🌙</span> = Night</td>
+                  </tr>
+                  <tr>
+                    <td><span class="ball-NB font-bold">NB</span> = Net Ball</td>
+                    <td><span>🌊</span> = Surfing</td>
+                  </tr>
+                  <tr>
+                    <td><span class="ball-QB font-bold">QB</span> = Quick Ball</td>
+                    <td><span>🎣</span> = Super Rod</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- SUPER RODS LOCATIONS -->
+            <div class="guide-col-box">
+              <div class="guide-panel-header">SUPER RODS LOCATIONS</div>
+              <table class="rod-table">
+                <tbody>
+                  <tr>
+                    <td>Kanto</td>
+                    <td><a href="#row-k8-1" class="rod-link">Route 12</a></td>
+                  </tr>
+                  <tr>
+                    <td>Johto</td>
+                    <td><a href="#row-j2-1" class="rod-link">Route 26</a></td>
+                  </tr>
+                  <tr>
+                    <td>Hoenn</td>
+                    <td><a href="#row-h13-1" class="rod-link">Mossdeep</a></td>
+                  </tr>
+                  <tr>
+                    <td>Sinnoh</td>
+                    <td><a href="#row-s19-1" class="rod-link">Fight Area</a></td>
+                  </tr>
+                  <tr>
+                    <td>Unova</td>
+                    <td><a href="#row-u28-1" class="rod-link">After E4</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- NOTES -->
+            <div class="guide-col-box">
+              <div class="guide-panel-header">NOTES</div>
+              <div class="notes-body">
+                <p>Catch the night pokemons when it's night time, since night only lasts for 1h and 45min.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Legend Rules Block -->
+          <div class="guide-rules-footer">
+            <p>Pokeballs painted <span class="ball-UB font-bold">blue</span> means that the pokemon needs to be asleep. All catch are considered as 1hp.</p>
+            <p><span class="underline">Underscored</span> pokemons means that it requires a lure to find it.</p>
+            <p>The "%" on some pokemons means that the chance to catch is not 100%.</p>
+          </div>
+        </div>
+
+        <!-- Right Stack: ITEMS NEEDED - MONS NEEDED -->
+        <div class="guide-right-stack">
+          <div class="guide-panel-header">ITEMS NEEDED - MONS NEEDED</div>
+          <table class="items-needed-table">
+            <tbody>
+              <tr>
+                <td>163x Quick Ball</td>
+                <td>1x Dubious Disc</td>
+                <td>1x Protector</td>
+              </tr>
+              <tr>
+                <td>26+ Great Balls</td>
+                <td>1x Up-Grade</td>
+                <td>1x Razor Claw</td>
+              </tr>
+              <tr>
+                <td>49+ Ultra Balls</td>
+                <td>1x Electirilizer</td>
+                <td>1x Razor Fang</td>
+              </tr>
+              <tr>
+                <td>24+ Dusk Balls</td>
+                <td>4x Fire Stone</td>
+                <td>1x Reaper Cloth</td>
+              </tr>
+              <tr>
+                <td>13+ Net Balls</td>
+                <td>2x King's Rock</td>
+                <td>3x Shiny Stone</td>
+              </tr>
+              <tr>
+                <td>50+ Expert Lures</td>
+                <td>5x Leaf Stone</td>
+                <td>4x Sun Stone</td>
+              </tr>
+              <tr>
+                <td>2x Dawn Stone</td>
+                <td>1x Magmarizer</td>
+                <td>2x Thunder Stone</td>
+              </tr>
+              <tr>
+                <td>1x Deepseascale</td>
+                <td>2x Metal Coat</td>
+                <td>3x Dusk Stone</td>
+              </tr>
+              <tr>
+                <td>1x Deepseatooth</td>
+                <td>6x Moon Stone</td>
+                <td>6x Water Stone</td>
+              </tr>
+              <tr>
+                <td>1x Dragon Scale</td>
+                <td colspan="2">22 Blue PokéBLOCK OR 11 Plus</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8-Column Side-by-Side Spreadsheet Board -->
+  <main id="spreadsheet-board" class="sheet-board">
+    <!-- Columns rendered dynamically via JS -->
+  </main>
+
+  <!-- Modal for Adding New Entry -->
+  <div id="add-modal" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-4">
+    <div class="bg-[#1b1924] border border-[#8a75d6] rounded-lg max-w-md w-full p-5 shadow-2xl text-xs">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-[#3c3652]">
+        <h3 class="text-sm font-bold text-[#f1c232]">Añadir Entrada a la Hoja</h3>
+        <button onclick="closeAddModal()" class="text-zinc-400 hover:text-white text-lg leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <form id="add-form" class="space-y-3">
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">Columna / Región</label>
+          <select id="modal-region" class="w-full bg-[#121212] border border-[#3c3c3c] rounded px-2.5 py-1.5 text-white outline-none"></select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">Ubicación / Subcabecera</label>
+          <input
+            type="text"
+            id="modal-location"
+            list="existing-locations-list"
+            required
+            placeholder="Ej. Viridian Forest"
+            class="w-full bg-[#121212] border border-[#3c3c3c] rounded px-2.5 py-1.5 text-white outline-none"
+          />
+          <datalist id="existing-locations-list"></datalist>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">Texto de Fila (Pokémon / Evo) *</label>
+            <input
+              type="text"
+              id="modal-label"
+              required
+              placeholder="Ej. Bulbasaur - 70%"
+              class="w-full bg-[#121212] border border-[#3c3c3c] rounded px-2.5 py-1.5 text-white outline-none"
+            />
+          </div>
+          <div>
+            <label class="block font-semibold text-zinc-300 mb-1">INFO (Ball / Nivel / Item)</label>
+            <input
+              type="text"
+              id="modal-info"
+              placeholder="QB, UB, DB, GB, NB, 32, Fire Stone..."
+              class="w-full bg-[#121212] border border-[#3c3c3c] rounded px-2.5 py-1.5 text-white outline-none"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">Enlace (opcional — subraya el texto)</label>
+          <input
+            type="url"
+            id="modal-link"
+            placeholder="https://..."
+            class="w-full bg-[#121212] border border-[#3c3c3c] rounded px-2.5 py-1.5 text-white outline-none"
+          />
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-[#3c3652]">
+          <button type="button" onclick="closeAddModal()" class="px-3 py-1.5 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700 cursor-pointer">Cancelar</button>
+          <button type="submit" class="px-3.5 py-1.5 rounded font-bold bg-[#8a75d6] text-[#121212] hover:bg-[#9f8ce6] cursor-pointer">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Toast / Confirmation Box (No alert/confirm) -->
+  <div id="toast-box" class="fixed bottom-4 right-4 z-50 hidden bg-[#211d2b] border border-[#f1c232] text-white px-3.5 py-2.5 rounded shadow-2xl text-xs flex items-center gap-3">
+    <span id="toast-message"></span>
+    <div id="toast-actions" class="flex gap-1.5"></div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // COMPLETE DATASET MATCHING THE 8-COLUMN SPREADSHEET SCREENSHOT
+    // =========================================================================
+    const DEFAULT_SHEET_DATA = [
+      {
+        id: 'KANTO',
+        name: 'KANTO',
+        locations: [
+          {
+            id: 'k-1',
+            name: 'Viridian Forest',
+            rows: [
+              { id: 'k1-1', label: 'Bellsprout - [🌅/☀️]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'k1-2', label: 'Ledyba - [🌅]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'k1-3', label: 'Caterpie', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k1-4', label: 'Weedle', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k1-5', label: 'Pidgey', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k1-6', label: 'Bulbasaur - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Bulbasaur', done: false }
+            ]
+          },
+          {
+            id: 'k-2',
+            name: 'Route 3',
+            rows: [
+              { id: 'k2-1', label: 'Rattata', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k2-2', label: 'Spearow', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k2-3', label: 'Ekans', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k2-4', label: 'Sandshrew', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k2-5', label: 'Nidoran M', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k2-6', label: 'Nidoran F', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k2-7', label: 'Jigglypuff', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k2-8', label: 'Mankey', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k2-9', label: 'Charmander - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Charmander', done: false }
+            ]
+          },
+          {
+            id: 'k-3',
+            name: 'Mt Moon',
+            rows: [
+              { id: 'k3-1', label: 'Clefairy - [🌙]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k3-2', label: 'Paras', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k3-3', label: 'Geodude', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-4',
+            name: 'Route 24',
+            rows: [
+              { id: 'k4-1', label: 'Sunkern - [🌅/☀️]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k4-2', label: 'Meowth', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k4-3', label: 'Psyduck', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k4-4', label: 'Abra', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k4-5', label: 'Squirtle - 70%', info: 'NB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Squirtle', done: false }
+            ]
+          },
+          {
+            id: 'k-5',
+            name: 'Power Plant',
+            rows: [
+              { id: 'k5-1', label: 'Pikachu', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'k5-2', label: 'Voltorb', info: 'QB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-6',
+            name: 'Vermilion City',
+            rows: [
+              { id: 'k6-1', label: 'Tentacool - [🌊]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-7',
+            name: 'Saffron City - Silph Co.',
+            rows: [
+              { id: 'k7-1', label: 'Lapras', info: '', doc: false, warn: false, link: 'https://imgur.com/a/3iDKRTe', done: false }
+            ]
+          },
+          {
+            id: 'k-8',
+            name: 'Route 12',
+            rows: [
+              { id: 'k8-1', label: 'Oddish/Gloom x2 - [🌙]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-9',
+            name: 'Route 17',
+            rows: [
+              { id: 'k9-1', label: 'Grimer', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k9-2', label: 'Doduo', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k9-3', label: 'Eevee - 70%', info: 'UB', doc: true, warn: false, link: 'https://ibb.co/mrnH54h0', done: false }
+            ]
+          },
+          {
+            id: 'k-10',
+            name: 'Victory Road',
+            rows: [
+              { id: 'k10-1', label: 'Hitmonlee', info: 'DB', doc: false, warn: false, link: '', done: false },
+              { id: 'k10-2', label: 'Hitmontop (Up ladder once)', info: 'UB', doc: true, warn: false, link: '', done: false },
+              { id: 'k10-3', label: 'Hitmonchan', info: 'DB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-11',
+            name: 'Five Isle Meadow - 🎣',
+            rows: [
+              { id: 'k11-1', label: 'Krabby', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k11-2', label: 'Horsea', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'k11-3', label: 'Qwilfish', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-12',
+            name: 'Three Isle Port',
+            rows: [
+              { id: 'k12-1', label: 'Dunsparce', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'JOHTO',
+        name: 'JOHTO',
+        locations: [
+          {
+            id: 'j-1',
+            name: 'Route 29 - 🌅',
+            rows: [
+              { id: 'j1-1', label: 'Sentret', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-2',
+            name: 'Route 46 - Headbutt 📄',
+            rows: [
+              { id: 'j2-1', label: 'Pineco', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j2-2', label: 'Exeggcute', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'j2-3', label: 'Murkrow - 47% - [Insomnia]', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-3',
+            name: 'National Park',
+            rows: [
+              { id: 'j3-1', label: 'Hoothoot - [🌙]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'j3-2', label: 'Spinarak - [🌙]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'j3-3', label: 'Venonat', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'j3-4', label: 'Chikorita - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Chikorita', done: false }
+            ]
+          },
+          {
+            id: 'j-4',
+            name: 'Route 32',
+            rows: [
+              { id: 'j4-1', label: 'Mareep', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j4-2', label: 'Natu - [Headbutt]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'j4-3', label: 'Totodile - 70%', info: 'NB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Totodile', done: false }
+            ]
+          },
+          {
+            id: 'j-5',
+            name: 'Union Cave',
+            rows: [
+              { id: 'j5-1', label: 'Wooper - [🌙]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j5-2', label: 'Slowpoke x2 - [🌅/☀️/🌊]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j5-3', label: 'Zubat', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j5-4', label: 'Tyrogue', info: 'DB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Tyrogue', done: false }
+            ]
+          },
+          {
+            id: 'j-6',
+            name: 'Route 34',
+            rows: [
+              { id: 'j6-1', label: 'Drowzee - [🌙]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j6-2', label: 'Togepi', info: 'QB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Togepi', done: false }
+            ]
+          },
+          {
+            id: 'j-7',
+            name: 'Route 35',
+            rows: [
+              { id: 'j7-1', label: 'Yanma - [🌅/☀️]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'j7-2', label: 'Growlithe - [🌅/☀️]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j7-3', label: 'Snubbull - [🌅/☀️]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j7-4', label: 'Cyndaquil - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Cyndaquil', done: false }
+            ]
+          },
+          {
+            id: 'j-8',
+            name: 'Route 37',
+            rows: [
+              { id: 'j8-1', label: 'Aipom - 70% - [Headbutt]', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'j8-2', label: 'Stantler - 70%', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-9',
+            name: 'Burned Tower',
+            rows: [
+              { id: 'j9-1', label: 'Magby - 88% - [B1F]', info: 'DB', doc: true, warn: false, link: '', done: false },
+              { id: 'j9-2', label: 'Koffing', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-10',
+            name: 'Cianwood City',
+            rows: [
+              { id: 'j10-1', label: 'Shuckle - [Rock Smash]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'j10-2', label: 'Corsola - [🎣/🌅/☀️]', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-11',
+            name: 'Route 47 - Waterfall',
+            rows: [
+              { id: 'j11-1', label: 'Farfetchd - 70% - [🌅/☀️]', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'j11-2', label: 'Miltank - 70%', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'j11-3', label: 'Ditto - 55%', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-12',
+            name: 'Route 48 📄',
+            rows: [
+              { id: 'j12-1', label: 'Vulpix - [🌙]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j12-2', label: 'Hoppip - [🌅/☀️]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j12-3', label: 'Girafarig - 93%', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'j12-4', label: 'Tauros - 70%', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'j12-5', label: 'Diglett', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'j12-6', label: 'Skarmory - 39% [Headbutt]', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-13',
+            name: 'Route 44',
+            rows: [
+              { id: 'j13-1', label: 'Sneasel - [Headbutt] - 94%', info: 'UB', doc: true, warn: false, link: '', done: false },
+              { id: 'j13-2', label: 'Tangela - 70%', info: 'UB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-14',
+            name: 'Blackthorn City',
+            rows: [
+              { id: 'j14-1', label: 'Poliwag x2 - [🌊]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-15',
+            name: 'Dragons Den',
+            rows: [
+              { id: 'j15-1', label: 'Dratini - 88% - [Shed Skin/🌊🎣]', info: 'DB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-16',
+            name: 'Route 45',
+            rows: [
+              { id: 'j16-1', label: 'Gligar - [🌙]', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'j16-2', label: 'Teddiursa', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'j16-3', label: 'Phanpy', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-17',
+            name: 'Dark Cave - Blackthorn',
+            rows: [
+              { id: 'j17-1', label: 'Wobbuffet - 88%', info: 'DB', doc: false, warn: false, link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'HOENN',
+        name: 'HOENN',
+        locations: [
+          {
+            id: 'h-1',
+            name: 'Petalburg Woods',
+            rows: [
+              { id: 'h1-1', label: 'Silcoon - [🌅/☀️]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'h1-2', label: 'Cascoon - [🌅/🌙]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'h1-3', label: 'Poochyena', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h1-4', label: 'Zigzagoon', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h1-5', label: 'Wurmple', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h1-6', label: 'Shroomish', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h1-7', label: 'Slakoth', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h1-8', label: 'Treecko - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Treecko', done: false }
+            ]
+          },
+          {
+            id: 'h-2',
+            name: 'Route 104',
+            rows: [
+              { id: 'h2-1', label: 'Wingull', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h2-2', label: 'Taillow', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'h2-3', label: 'Mudkip - 70%', info: 'NB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Mudkip', done: false }
+            ]
+          },
+          {
+            id: 'h-3',
+            name: 'Petalburg City',
+            rows: [
+              { id: 'h3-1', label: 'Corphish - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-4',
+            name: 'Route 116',
+            rows: [
+              { id: 'h4-1', label: 'Nincada', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h4-2', label: 'Skitty', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h4-3', label: 'Whismur', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-5',
+            name: 'Route 112',
+            rows: [
+              { id: 'h5-1', label: 'Marill', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h5-2', label: 'Machop', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h5-3', label: 'Numel', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h5-4', label: 'Torchic - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Torchic', done: false }
+            ]
+          },
+          {
+            id: 'h-6',
+            name: 'Magma Hideout',
+            rows: [
+              { id: 'h6-1', label: 'Slugma', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'h6-2', label: 'Torkoal', info: 'GB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-7',
+            name: 'Jagged Pass',
+            rows: [
+              { id: 'h7-1', label: 'Spoink', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-8',
+            name: 'Route 113',
+            rows: [
+              { id: 'h8-1', label: 'Spinda', info: 'QB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-9',
+            name: 'Route 114',
+            rows: [
+              { id: 'h9-1', label: 'Swablu - [🌅/☀️]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h9-2', label: 'Lotad', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'h9-3', label: 'Seedot', info: 'QB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-10',
+            name: 'Meteor Falls',
+            rows: [
+              { id: 'h10-1', label: 'Bagon - 88%', info: 'DB', doc: true, warn: false, link: 'https://imgur.com/a/89NjGNh', done: false },
+              { id: 'h10-2', label: 'Solrock/Lunatone - 88%', info: 'DB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-11',
+            name: 'Route 110',
+            rows: [
+              { id: 'h11-1', label: 'Plusle', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h11-2', label: 'Minun', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h11-3', label: 'Electrike', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'h11-4', label: 'Gulpin', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-12',
+            name: 'Route 111 📄',
+            rows: [
+              { id: 'h12-1', label: 'Baltoy', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h12-2', label: 'Cacnea', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h12-3', label: 'Trapinch', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-13',
+            name: 'Mossdeep City',
+            rows: [
+              { id: 'h13-1', label: 'Beldum - Gift', info: '', doc: true, warn: false, link: 'https://imgur.com/a/zj4IDpn', done: false }
+            ]
+          },
+          {
+            id: 'h-14',
+            name: 'Shoal Cave',
+            rows: [
+              { id: 'h14-1', label: 'Spheal', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h14-2', label: 'Snorunt - [Both Gender, 🌙]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-15',
+            name: 'Route 119',
+            rows: [
+              { id: 'h15-1', label: 'Carvanha - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h15-2', label: 'Feebas - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-16',
+            name: 'Route 120',
+            rows: [
+              { id: 'h16-1', label: 'Kecleon', info: 'GB', doc: true, warn: false, link: 'https://imgur.com/a/nGYyUXz', done: false },
+              { id: 'h16-2', label: 'Tropius', info: 'GB', doc: true, warn: false, link: '', done: false },
+              { id: 'h16-3', label: 'Absol - 47%', info: 'UB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-17',
+            name: 'Mt. Pyre F1',
+            rows: [
+              { id: 'h17-1', label: 'Duskul', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h17-2', label: 'Shuppet', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h17-3', label: 'Chingling', info: 'GB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-18',
+            name: 'Sootopolis City',
+            rows: [
+              { id: 'h18-1', label: 'Magikarp - [🌊]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-19',
+            name: 'Underwater 📄',
+            rows: [
+              { id: 'h19-1', label: 'Chinchou', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h19-2', label: 'Clamperl x2', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-20',
+            name: 'Granite Cave',
+            rows: [
+              { id: 'h20-1', label: 'Makuhita - [1F]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'h20-2', label: 'Sableye - 88% - [2F]', info: 'DB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-21',
+            name: 'Artisian Cave',
+            rows: [
+              { id: 'h21-1', label: 'Smeargle - 88%', info: 'DB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-22',
+            name: 'Slateport - Super Rod',
+            rows: [
+              { id: 'h22-1', label: 'Wailmer', info: 'NB', doc: false, warn: false, link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'SINNOH',
+        name: 'SINNOH',
+        locations: [
+          {
+            id: 's-1',
+            name: 'Valley Windworks 📄',
+            rows: [
+              { id: 's1-1', label: 'Drifloon - [🌙]', info: 'GB', doc: true, warn: false, link: '', done: false },
+              { id: 's1-2', label: 'Shinx', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's1-3', label: 'Pachirisu', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-2',
+            name: 'Eterna Forest - From Eterna',
+            rows: [
+              { id: 's2-1', label: 'Buneary', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's2-2', label: 'Misdreavus - [🌙]', info: 'DB', doc: false, warn: false, link: '', done: false },
+              { id: 's2-3', label: 'Turtwig - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Turtwig', done: false }
+            ]
+          },
+          {
+            id: 's-3',
+            name: 'Old Chateau - Inside Eterna Forest',
+            rows: [
+              { id: 's3-1', label: 'Gastly', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 's3-2', label: 'Rotom - [Gift/🌙]', info: 'DB', doc: true, warn: false, link: 'https://imgur.com/a/4ISRKIQ', done: false }
+            ]
+          },
+          {
+            id: 's-4',
+            name: 'Route 207 - From Oreburgh',
+            rows: [
+              { id: 's4-1', label: 'Kricketot - [🌙]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's4-2', label: 'Hippopotas', info: 'GB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Hippopotas', done: false }
+            ]
+          },
+          {
+            id: 's-5',
+            name: 'Wayward Cave 📄',
+            link: 'https://imgur.com/a/3iv3LSA',
+            rows: [
+              { id: 's5-1', label: 'Bronzor', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 's5-2', label: 'Gible - 88%', info: 'DB', doc: true, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Gible', done: false }
+            ]
+          },
+          {
+            id: 's-6',
+            name: 'Route 208 - From Hearthome',
+            rows: [
+              { id: 's6-1', label: 'Budew - [🌅/🌙]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's6-2', label: 'Roselia - [🌅/☀️]', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 's6-3', label: 'Bidoof', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's6-4', label: 'Ralts - [Both Genders]', info: 'QB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-7',
+            name: 'Great Marsh - From Pastoria',
+            rows: [
+              { id: 's7-1', label: 'Skorupi', info: '', doc: true, warn: true, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-8',
+            name: 'Route 213',
+            rows: [
+              { id: 's8-1', label: 'Chatot - 46% - [🌅/☀️]', info: 'UB', doc: true, warn: false, link: '', done: false },
+              { id: 's8-2', label: 'Buizel', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's8-3', label: 'Shellos', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's8-4', label: 'Piplup - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Piplup', done: false }
+            ]
+          },
+          {
+            id: 's-9',
+            name: 'Solaceon Ruins',
+            rows: [
+              { id: 's9-1', label: 'Unown', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-10',
+            name: 'Route 209',
+            rows: [
+              { id: 's10-1', label: 'Starly - [🌅/☀️]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's10-2', label: 'Sudowoodo', info: 'GB', doc: true, warn: false, link: '', done: false },
+              { id: 's10-3', label: 'Happiny', info: 'GB', doc: false, warn: true, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-11',
+            name: 'Veilstone City',
+            rows: [
+              { id: 's11-1', label: 'Porygon - Gift', info: '', doc: true, warn: false, link: 'https://imgur.com/a/XDq0CZw', done: false }
+            ]
+          },
+          {
+            id: 's-12',
+            name: 'Route 214',
+            rows: [
+              { id: 's12-1', label: 'Stunky - [🌙]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's12-2', label: 'Houndour - [🌙]', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 's12-3', label: 'Ponyta', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's12-4', label: 'Chimchar - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Chimchar', done: false }
+            ]
+          },
+          {
+            id: 's-13',
+            name: 'Turnback Cave',
+            rows: [
+              { id: 's13-1', label: 'Spiritomb - 52%', info: 'UB', doc: true, warn: false, link: 'https://imgur.com/a/YSPQ4AD', done: false }
+            ]
+          },
+          {
+            id: 's-14',
+            name: 'Route 222 - From Sunyshore',
+            rows: [
+              { id: 's14-1', label: 'Magnemite', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's14-2', label: 'Electabuzz - 70%', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-15',
+            name: 'Route 218 - From Canalave',
+            rows: [
+              { id: 's15-1', label: 'Glameow', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's15-2', label: 'Mr Mime - 70%', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-16',
+            name: 'Route 217 - From Snowpoint',
+            rows: [
+              { id: 's16-1', label: 'Snover', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 's16-2', label: 'Swinub', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's16-3', label: 'Meditite', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-17',
+            name: 'Victory Road',
+            rows: [
+              { id: 's17-1', label: 'Gabite - 88%', info: 'DB', doc: false, warn: true, link: '', done: false },
+              { id: 's17-2', label: 'Onix - 88%', info: 'DB', doc: true, warn: false, link: '', done: false },
+              { id: 's17-3', label: 'Rhyhorn', info: 'DB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-18',
+            name: 'Route 229 - From Resort Area',
+            rows: [
+              { id: 's18-1', label: 'Masquerain - [🌊,🌙, Very →]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 's18-2', label: 'Volbeat - [🌙]', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 's18-3', label: 'Illumise - [🌙]', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 's18-4', label: 'Scyther', info: 'NB', doc: false, warn: false, link: '', done: false },
+              { id: 's18-5', label: 'Pinsir', info: 'NB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 's-19',
+            name: 'Route 226',
+            rows: [
+              { id: 's19-1', label: 'Relicanth - 70% - [🎣]', info: 'NB', doc: false, warn: true, link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'HONEY TREE',
+        name: 'HONEY TREE',
+        externalLink: 'https://forums.pokemmo.com/index.php?/topic/154851-shamos-honey-tree-route-for-pokemmo/',
+        locations: [
+          {
+            id: 'ht-1',
+            name: '',
+            rows: [
+              { id: 'ht1-1', label: 'Heracross', info: 'NB', doc: true, warn: false, link: '', done: false },
+              { id: 'ht1-2', label: 'Burmy - [Female]', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'ht1-3', label: 'Burmy - [Male]', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'ht1-4', label: 'Combee - [Female]', info: 'GB', doc: true, warn: false, link: '', done: false },
+              { id: 'ht1-5', label: 'Munchlax - 78%', info: 'UB', doc: true, warn: false, link: '', done: false },
+              { id: 'ht1-6', label: 'Cherubi', info: 'GB', doc: false, warn: false, link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'UNOVA',
+        name: 'UNOVA',
+        locations: [
+          {
+            id: 'u-1',
+            name: 'Dreamyard',
+            rows: [
+              { id: 'u1-1', label: 'Munna', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-2',
+            name: 'Route 3',
+            rows: [
+              { id: 'u2-1', label: 'Patrat', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u2-2', label: 'Lillipup', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u2-3', label: 'Pidove', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u2-4', label: 'Purrloin', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u2-5', label: 'Blitzle', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u2-6', label: 'Tepig - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Tepig', done: false }
+            ]
+          },
+          {
+            id: 'u-3',
+            name: 'Wellspring Cave',
+            rows: [
+              { id: 'u3-1', label: 'Roggenrolla', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u3-2', label: 'Woobat', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-4',
+            name: 'Pinwheel Forest [Outside] 📄',
+            rows: [
+              { id: 'u4-1', label: 'Croagunk', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'u4-2', label: 'Tympole', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u4-3', label: 'Riolu', info: 'UB', doc: true, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Riolu', done: false }
+            ]
+          },
+          {
+            id: 'u-5',
+            name: 'Pinwheel Forest - [Inside]',
+            rows: [
+              { id: 'u5-1', label: 'Sewaddle', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u5-2', label: 'Venipede', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u5-3', label: 'Petilil', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u5-4', label: 'Cottonee', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u5-5', label: 'Pansage', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'u5-6', label: 'Pansear', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'u5-7', label: 'Panpour', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'u5-8', label: 'Snivy - 70%', info: 'UB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Snivy', done: false }
+            ]
+          },
+          {
+            id: 'u-6',
+            name: 'Desert Resort [Inner] 📄',
+            rows: [
+              { id: 'u6-1', label: 'Sigilyph - 70%', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'u6-2', label: 'Darumaka', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'u6-3', label: 'Sandile', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u6-4', label: 'Maractus', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u6-5', label: 'Dwebble', info: 'QB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-7',
+            name: 'Relic Castle',
+            rows: [
+              { id: 'u7-1', label: 'Yamask - [1F]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u7-2', label: 'Volcarona - 41%', info: 'NB', doc: true, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Volcarona', done: false }
+            ]
+          },
+          {
+            id: 'u-8',
+            name: 'Route 16',
+            rows: [
+              { id: 'u8-1', label: 'Solosis - [Over Coat]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u8-2', label: 'Gothita', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u8-3', label: 'Trubbish', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-9',
+            name: 'Lostlorn Forest',
+            rows: [
+              { id: 'u9-1', label: 'Goldeen - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u9-2', label: 'Zorua - [Lead with Reactive Gas]', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-10',
+            name: 'Route 15',
+            rows: [
+              { id: 'u10-1', label: 'Marowak', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'u10-2', label: 'Sawk - 70%', info: 'UB', doc: true, warn: true, link: '', done: false },
+              { id: 'u10-3', label: 'Throh - 70%', info: 'UB', doc: true, warn: true, link: '', done: false },
+              { id: 'u10-4', label: 'Kangaskhan - 70%', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'u10-5', label: 'Pupitar - 70%', info: 'UB', doc: false, warn: true, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-11',
+            name: 'Cold Storage',
+            rows: [
+              { id: 'u11-1', label: 'Timburr', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u11-2', label: 'Minccino', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u11-3', label: 'Vanillite', info: 'QB', doc: true, warn: true, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-12',
+            name: 'Route 6 📄',
+            rows: [
+              { id: 'u12-1', label: 'Deerling', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u12-2', label: 'Foongus', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u12-3', label: 'Oshawott', info: 'NB', doc: false, warn: false, link: 'https://pokemmo.shoutwiki.com/wiki/Oshawott', done: false }
+            ]
+          },
+          {
+            id: 'u-13',
+            name: 'Mistralton Cave',
+            rows: [
+              { id: 'u13-1', label: 'Axew - 48%', info: 'DB', doc: false, warn: false, link: '', done: false },
+              { id: 'u13-2', label: 'Aron - [2F]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-14',
+            name: 'Chargestone - From Mistralton',
+            rows: [
+              { id: 'u14-1', label: 'Tynamo - [B2F]', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'u14-2', label: 'Ferroseed', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u14-3', label: 'Nosepass', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u14-4', label: 'Joltik', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u14-5', label: 'Klink', info: 'GB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-15',
+            name: 'Celestial Tower',
+            rows: [
+              { id: 'u15-1', label: 'Elgyem - [Roof]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u15-2', label: 'Litwick', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-16',
+            name: 'Icirrus City',
+            rows: [
+              { id: 'u16-1', label: 'Barboach - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u16-2', label: 'Stunfisk - [🌊]', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'u16-3', label: 'Shelmet', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'u16-4', label: 'Karrablast - [Shed Skin]', info: 'QB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-17',
+            name: 'Twist Mountain',
+            rows: [
+              { id: 'u17-1', label: 'Cubchoo', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'u17-2', label: 'Cryogonal - 48% - [Cold Room]', info: 'DB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-18',
+            name: 'Dragonspiral Tower - Inside',
+            rows: [
+              { id: 'u18-1', label: 'Golett', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u18-2', label: 'Druddigon - 88%', info: 'DB', doc: true, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-19',
+            name: 'Challengers Cave',
+            rows: [
+              { id: 'u19-1', label: 'Lickitung - 88%', info: 'DB', doc: true, warn: false, link: '', done: false },
+              { id: 'u19-2', label: 'Mawile - 88%', info: 'DB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-20',
+            name: 'Route 10',
+            rows: [
+              { id: 'u20-1', label: 'Boufallant - 70% - [Sap Sipper]', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-21',
+            name: 'Victory Road - First Room',
+            rows: [
+              { id: 'u21-1', label: 'Deino - 88%', info: 'DB', doc: false, warn: false, link: '', done: false },
+              { id: 'u21-2', label: 'Durant', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'u21-3', label: 'Mienfoo', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-22',
+            name: 'Victory Road - Outside',
+            rows: [
+              { id: 'u22-1', label: 'Heatmor', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-23',
+            name: 'Route 11',
+            rows: [
+              { id: 'u23-1', label: 'Rufflet - [🌅/☀️]', info: 'GB', doc: true, warn: false, link: '', done: false },
+              { id: 'u23-2', label: 'Vullaby', info: 'QB', doc: true, warn: false, link: '', done: false },
+              { id: 'u23-3', label: 'Pawniard', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u23-4', label: 'Zangoose', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'u23-5', label: 'Seviper', info: 'UB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-24',
+            name: 'Giant Chasm - Cave',
+            rows: [
+              { id: 'u24-1', label: 'Delibird - 43% - [Vital Spirit]', info: 'DB', doc: true, warn: false, link: '', done: false },
+              { id: 'u24-2', label: 'Seel - [🌊]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u24-3', label: 'Jynx - 88%', info: 'DB', doc: false, warn: true, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-25',
+            name: 'Giant Chasm - Crater Forest 📄',
+            rows: [
+              { id: 'u25-1', label: 'Metang/Metagross - 31%', info: 'UB', doc: true, warn: false, link: '', done: false },
+              { id: 'u25-2', label: 'Solrock/Lunatone - 70%', info: 'UB', doc: true, warn: true, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-26',
+            name: 'Undella Town',
+            rows: [
+              { id: 'u26-1', label: 'Staryu - [🌙/🌊]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u26-2', label: 'Mantine - 68% - [🌊]', info: 'NB', doc: true, warn: true, link: '', done: false },
+              { id: 'u26-3', label: 'Frillish - [🌊]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u26-4', label: 'Remoraid - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u26-5', label: 'Luvdisc - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u26-6', label: 'Shellder - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-27',
+            name: 'Route 1',
+            rows: [
+              { id: 'u27-1', label: 'Basculin - 68% - [🌊]', info: 'NB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-28',
+            name: 'Route 18',
+            rows: [
+              { id: 'u28-1', label: 'Larvest - Gift', info: '', doc: true, warn: false, link: 'https://imgur.com/a/v0FZqPH', done: false },
+              { id: 'u28-2', label: 'Finneon - [🎣]', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'u28-3', label: 'Carnivine', info: 'UB', doc: false, warn: false, link: '', done: false },
+              { id: 'u28-4', label: 'Scraggy', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'PHENOS',
+        name: 'PHENOS',
+        locations: [
+          {
+            id: 'p-1',
+            name: 'Grass',
+            rows: [
+              { id: 'p1-1', label: 'Emolga', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'p1-2', label: 'Audino', info: 'QB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'p-2',
+            name: 'Shadow',
+            rows: [
+              { id: 'p2-1', label: 'Ducklett', info: 'QB', doc: false, warn: false, link: '', done: false },
+              { id: 'p2-2', label: 'Swanna', info: 'NB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'p-3',
+            name: 'Water',
+            rows: [
+              { id: 'p3-1', label: 'Alomomola', info: 'NB', doc: false, warn: false, link: '', done: false }
+            ]
+          },
+          {
+            id: 'p-4',
+            name: 'Dust',
+            rows: [
+              { id: 'p4-1', label: 'Drilbur', info: 'GB', doc: false, warn: false, link: '', done: false },
+              { id: 'p4-2', label: 'Excadrill', info: 'DB', doc: false, warn: false, link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'FOSSIL',
+        name: 'FOSSIL',
+        isFossil: true,
+        locations: [
+          {
+            id: 'f-1',
+            name: '',
+            rows: [
+              { id: 'k1-1', label: 'Bellsprout - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 'k1-2', label: 'Ledyba - [🌅]', info: 'QB', link: '', done: false },
+              { id: 'k1-3', label: 'Caterpie', info: 'QB', link: '', done: false },
+              { id: 'k1-4', label: 'Weedle', info: 'QB', link: '', done: false },
+              { id: 'k1-5', label: 'Pidgey', info: 'QB', link: '', done: false },
+              { id: 'k1-6', label: 'Bulbasaur - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Bulbasaur', done: false }
+            ]
+          },
+          {
+            id: 'k-2',
+            name: 'Route 3',
+            rows: [
+              { id: 'k2-1', label: 'Rattata', info: 'QB', link: '', done: false },
+              { id: 'k2-2', label: 'Spearow', info: 'QB', link: '', done: false },
+              { id: 'k2-3', label: 'Ekans', info: 'QB', link: '', done: false },
+              { id: 'k2-4', label: 'Sandshrew', info: 'QB', link: '', done: false },
+              { id: 'k2-5', label: 'Nidoran M', info: 'QB', link: '', done: false },
+              { id: 'k2-6', label: 'Nidoran F', info: 'QB', link: '', done: false },
+              { id: 'k2-7', label: 'Jigglypuff', info: 'QB', link: '', done: false },
+              { id: 'k2-8', label: 'Mankey', info: 'QB', link: '', done: false },
+              { id: 'k2-9', label: 'Charmander - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Charmander', done: false }
+            ]
+          },
+          {
+            id: 'k-3',
+            name: 'Mt Moon',
+            rows: [
+              { id: 'k3-1', label: 'Clefairy - [🌙]', info: 'QB', link: '', done: false },
+              { id: 'k3-2', label: 'Paras', info: 'QB', link: '', done: false },
+              { id: 'k3-3', label: 'Geodude', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-4',
+            name: 'Route 24',
+            rows: [
+              { id: 'k4-1', label: 'Sunkern - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 'k4-2', label: 'Meowth', info: 'QB', link: '', done: false },
+              { id: 'k4-3', label: 'Psyduck', info: 'QB', link: '', done: false },
+              { id: 'k4-4', label: 'Abra', info: 'QB', link: '', done: false },
+              { id: 'k4-5', label: 'Squirtle - 70%', info: 'NB', link: 'https://pokemmo.shoutwiki.com/wiki/Squirtle', done: false }
+            ]
+          },
+          {
+            id: 'k-5',
+            name: 'Power Plant',
+            rows: [
+              { id: 'k5-1', label: 'Pikachu', info: 'QB', link: '', done: false },
+              { id: 'k5-2', label: 'Voltorb', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-6',
+            name: 'Vermilion City',
+            rows: [
+              { id: 'k6-1', label: 'Tentacool - [🌊]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-7',
+            name: 'Saffron City - Silph Co.',
+            rows: [
+              { id: 'k7-1', label: 'Lapras', info: '', link: 'https://imgur.com/a/3iDKRTe', done: false }
+            ]
+          },
+          {
+            id: 'k-8',
+            name: 'Route 12',
+            rows: [
+              { id: 'k8-1', label: 'Oddish/Gloom x2 - [🌙]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-9',
+            name: 'Route 17',
+            rows: [
+              { id: 'k9-1', label: 'Grimer', info: 'QB', link: '', done: false },
+              { id: 'k9-2', label: 'Doduo', info: 'QB', link: '', done: false },
+              { id: 'k9-3', label: 'Eevee - 70%', info: 'UB', link: 'https://ibb.co/mrnH54h0', done: false }
+            ]
+          },
+          {
+            id: 'k-10',
+            name: 'Victory Road',
+            rows: [
+              { id: 'k10-1', label: 'Hitmonlee', info: 'DB', link: '', done: false },
+              { id: 'k10-2', label: 'Hitmontop (Up ladder once)', info: 'UB', link: '', done: false },
+              { id: 'k10-3', label: 'Hitmonchan', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-11',
+            name: 'Five Isle Meadow - 🎣',
+            rows: [
+              { id: 'k11-1', label: 'Krabby', info: 'QB', link: '', done: false },
+              { id: 'k11-2', label: 'Horsea', info: 'QB', link: '', done: false },
+              { id: 'k11-3', label: 'Qwilfish', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'k-12',
+            name: 'Three Isle Port',
+            rows: [
+              { id: 'k12-1', label: 'Dunsparce', info: 'QB', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'JOHTO',
+        name: 'JOHTO',
+        locations: [
+          {
+            id: 'j-1',
+            name: 'Route 29 - 🌅',
+            rows: [
+              { id: 'j1-1', label: 'Sentret', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-2',
+            name: 'Route 46 - Headbutt',
+            rows: [
+              { id: 'j2-1', label: 'Pineco', info: 'QB', link: '', done: false },
+              { id: 'j2-2', label: 'Exeggcute', info: 'UB', link: '', done: false },
+              { id: 'j2-3', label: 'Murkrow - 47% - [Insomnia]', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-3',
+            name: 'National Park',
+            rows: [
+              { id: 'j3-1', label: 'Hoothoot - [🌙]', info: 'QB', link: '', done: false },
+              { id: 'j3-2', label: 'Spinarak - [🌙]', info: 'QB', link: '', done: false },
+              { id: 'j3-3', label: 'Venonat', info: 'QB', link: '', done: false },
+              { id: 'j3-4', label: 'Chikorita - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Chikorita', done: false }
+            ]
+          },
+          {
+            id: 'j-4',
+            name: 'Route 32',
+            rows: [
+              { id: 'j4-1', label: 'Mareep', info: 'QB', link: '', done: false },
+              { id: 'j4-2', label: 'Natu - [Headbutt]', info: 'QB', link: '', done: false },
+              { id: 'j4-3', label: 'Totodile - 70%', info: 'NB', link: 'https://pokemmo.shoutwiki.com/wiki/Totodile', done: false }
+            ]
+          },
+          {
+            id: 'j-5',
+            name: 'Union Cave',
+            rows: [
+              { id: 'j5-1', label: 'Wooper - [🌙]', info: 'QB', link: '', done: false },
+              { id: 'j5-2', label: 'Slowpoke x2 - [🌅/☀️/🌊]', info: 'QB', link: '', done: false },
+              { id: 'j5-3', label: 'Zubat', info: 'QB', link: '', done: false },
+              { id: 'j5-4', label: 'Tyrogue', info: 'DB', link: 'https://pokemmo.shoutwiki.com/wiki/Tyrogue', done: false }
+            ]
+          },
+          {
+            id: 'j-6',
+            name: 'Route 34',
+            rows: [
+              { id: 'j6-1', label: 'Drowzee - [🌙]', info: 'QB', link: '', done: false },
+              { id: 'j6-2', label: 'Togepi', info: 'QB', link: 'https://pokemmo.shoutwiki.com/wiki/Togepi', done: false }
+            ]
+          },
+          {
+            id: 'j-7',
+            name: 'Route 35',
+            rows: [
+              { id: 'j7-1', label: 'Yanma - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 'j7-2', label: 'Growlithe - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 'j7-3', label: 'Snubbull - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 'j7-4', label: 'Cyndaquil - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Cyndaquil', done: false }
+            ]
+          },
+          {
+            id: 'j-8',
+            name: 'Route 37',
+            rows: [
+              { id: 'j8-1', label: 'Aipom - 70% - [Headbutt]', info: 'UB', link: '', done: false },
+              { id: 'j8-2', label: 'Stantler - 70%', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-9',
+            name: 'Burned Tower',
+            rows: [
+              { id: 'j9-1', label: 'Magby - 88% - [B1F]', info: 'DB', link: '', done: false },
+              { id: 'j9-2', label: 'Koffing', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-10',
+            name: 'Cianwood City',
+            rows: [
+              { id: 'j10-1', label: 'Shuckle - [Rock Smash]', info: 'QB', link: '', done: false },
+              { id: 'j10-2', label: 'Corsola - [🎣/🌅/☀️]', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-11',
+            name: 'Route 47 - Waterfall',
+            rows: [
+              { id: 'j11-1', label: 'Farfetchd - 70% - [🌅/☀️]', info: 'UB', link: '', done: false },
+              { id: 'j11-2', label: 'Miltank - 70%', info: 'UB', link: '', done: false },
+              { id: 'j11-3', label: 'Ditto - 55%', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-12',
+            name: 'Route 48',
+            rows: [
+              { id: 'j12-1', label: 'Vulpix - [🌙]', info: 'QB', link: '', done: false },
+              { id: 'j12-2', label: 'Hoppip - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 'j12-3', label: 'Girafarig - 93%', info: 'UB', link: '', done: false },
+              { id: 'j12-4', label: 'Tauros - 70%', info: 'UB', link: '', done: false },
+              { id: 'j12-5', label: 'Diglett', info: 'QB', link: '', done: false },
+              { id: 'j12-6', label: 'Skarmory - 39% [Headbutt]', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-13',
+            name: 'Route 44',
+            rows: [
+              { id: 'j13-1', label: 'Sneasel - [Headbutt] - 94%', info: 'UB', link: '', done: false },
+              { id: 'j13-2', label: 'Tangela - 70%', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-14',
+            name: 'Blackthorn City',
+            rows: [
+              { id: 'j14-1', label: 'Poliwag x2 - [🌊]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-15',
+            name: 'Dragons Den',
+            rows: [
+              { id: 'j15-1', label: 'Dratini - 88% - [Shed Skin/🌊🎣]', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-16',
+            name: 'Route 45',
+            rows: [
+              { id: 'j16-1', label: 'Gligar - [🌙]', info: 'UB', link: '', done: false },
+              { id: 'j16-2', label: 'Teddiursa', info: 'GB', link: '', done: false },
+              { id: 'j16-3', label: 'Phanpy', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'j-17',
+            name: 'Dark Cave - Blackthorn',
+            rows: [
+              { id: 'j17-1', label: 'Wobbuffet - 88%', info: 'DB', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'HOENN',
+        name: 'HOENN',
+        locations: [
+          {
+            id: 'h-1',
+            name: 'Petalburg Woods',
+            rows: [
+              { id: 'h1-1', label: 'Silcoon - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 'h1-2', label: 'Cascoon - [🌅/🌙]', info: 'QB', link: '', done: false },
+              { id: 'h1-3', label: 'Poochyena', info: 'QB', link: '', done: false },
+              { id: 'h1-4', label: 'Zigzagoon', info: 'QB', link: '', done: false },
+              { id: 'h1-5', label: 'Wurmple', info: 'QB', link: '', done: false },
+              { id: 'h1-6', label: 'Shroomish', info: 'QB', link: '', done: false },
+              { id: 'h1-7', label: 'Slakoth', info: 'QB', link: '', done: false },
+              { id: 'h1-8', label: 'Treecko - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Treecko', done: false }
+            ]
+          },
+          {
+            id: 'h-2',
+            name: 'Route 104',
+            rows: [
+              { id: 'h2-1', label: 'Wingull', info: 'QB', link: '', done: false },
+              { id: 'h2-2', label: 'Taillow', info: 'QB', link: '', done: false },
+              { id: 'h2-3', label: 'Mudkip - 70%', info: 'NB', link: 'https://pokemmo.shoutwiki.com/wiki/Mudkip', done: false }
+            ]
+          },
+          {
+            id: 'h-3',
+            name: 'Petalburg City',
+            rows: [
+              { id: 'h3-1', label: 'Corphish - [🎣]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-4',
+            name: 'Route 116',
+            rows: [
+              { id: 'h4-1', label: 'Nincada', info: 'QB', link: '', done: false },
+              { id: 'h4-2', label: 'Skitty', info: 'QB', link: '', done: false },
+              { id: 'h4-3', label: 'Whismur', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-5',
+            name: 'Route 112',
+            rows: [
+              { id: 'h5-1', label: 'Marill', info: 'QB', link: '', done: false },
+              { id: 'h5-2', label: 'Machop', info: 'QB', link: '', done: false },
+              { id: 'h5-3', label: 'Numel', info: 'QB', link: '', done: false },
+              { id: 'h5-4', label: 'Torchic - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Torchic', done: false }
+            ]
+          },
+          {
+            id: 'h-6',
+            name: 'Magma Hideout',
+            rows: [
+              { id: 'h6-1', label: 'Slugma', info: 'QB', link: '', done: false },
+              { id: 'h6-2', label: 'Torkoal', info: 'GB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-7',
+            name: 'Jagged Pass',
+            rows: [
+              { id: 'h7-1', label: 'Spoink', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-8',
+            name: 'Route 113',
+            rows: [
+              { id: 'h8-1', label: 'Spinda', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-9',
+            name: 'Route 114',
+            rows: [
+              { id: 'h9-1', label: 'Swablu - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 'h9-2', label: 'Lotad', info: 'QB', link: '', done: false },
+              { id: 'h9-3', label: 'Seedot', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-10',
+            name: 'Meteor Falls',
+            rows: [
+              { id: 'h10-1', label: 'Bagon - 88%', info: 'DB', link: 'https://imgur.com/a/89NjGNh', done: false },
+              { id: 'h10-2', label: 'Solrock/Lunatone - 88%', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-11',
+            name: 'Route 110',
+            rows: [
+              { id: 'h11-1', label: 'Plusle', info: 'QB', link: '', done: false },
+              { id: 'h11-2', label: 'Minun', info: 'QB', link: '', done: false },
+              { id: 'h11-3', label: 'Electrike', info: 'GB', link: '', done: false },
+              { id: 'h11-4', label: 'Gulpin', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-12',
+            name: 'Route 111',
+            rows: [
+              { id: 'h12-1', label: 'Baltoy', info: 'QB', link: '', done: false },
+              { id: 'h12-2', label: 'Cacnea', info: 'QB', link: '', done: false },
+              { id: 'h12-3', label: 'Trapinch', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-13',
+            name: 'Mossdeep City',
+            rows: [
+              { id: 'h13-1', label: 'Beldum - Gift', info: '', link: 'https://imgur.com/a/zj4IDpn', done: false }
+            ]
+          },
+          {
+            id: 'h-14',
+            name: 'Shoal Cave',
+            rows: [
+              { id: 'h14-1', label: 'Spheal', info: 'QB', link: '', done: false },
+              { id: 'h14-2', label: 'Snorunt - [Both Gender, 🌙]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-15',
+            name: 'Route 119',
+            rows: [
+              { id: 'h15-1', label: 'Carvanha - [🎣]', info: 'QB', link: '', done: false },
+              { id: 'h15-2', label: 'Feebas - [🎣]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-16',
+            name: 'Route 120',
+            rows: [
+              { id: 'h16-1', label: 'Kecleon', info: 'GB', link: 'https://imgur.com/a/nGYyUXz', done: false },
+              { id: 'h16-2', label: 'Tropius', info: 'GB', link: '', done: false },
+              { id: 'h16-3', label: 'Absol - 47%', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-17',
+            name: 'Mt. Pyre F1',
+            rows: [
+              { id: 'h17-1', label: 'Duskul', info: 'QB', link: '', done: false },
+              { id: 'h17-2', label: 'Shuppet', info: 'QB', link: '', done: false },
+              { id: 'h17-3', label: 'Chingling', info: 'GB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-18',
+            name: 'Sootopolis City',
+            rows: [
+              { id: 'h18-1', label: 'Magikarp - [🌊]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-19',
+            name: 'Underwater',
+            rows: [
+              { id: 'h19-1', label: 'Chinchou', info: 'QB', link: '', done: false },
+              { id: 'h19-2', label: 'Clamperl x2', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-20',
+            name: 'Granite Cave',
+            rows: [
+              { id: 'h20-1', label: 'Makuhita - [1F]', info: 'QB', link: '', done: false },
+              { id: 'h20-2', label: 'Sableye - 88% - [2F]', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-21',
+            name: 'Artisian Cave',
+            rows: [
+              { id: 'h21-1', label: 'Smeargle - 88%', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'h-22',
+            name: 'Slateport - Super Rod',
+            rows: [
+              { id: 'h22-1', label: 'Wailmer', info: 'NB', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'SINNOH',
+        name: 'SINNOH',
+        locations: [
+          {
+            id: 's-1',
+            name: 'Valley Windworks',
+            rows: [
+              { id: 's1-1', label: 'Drifloon - [🌙]', info: 'GB', link: '', done: false },
+              { id: 's1-2', label: 'Shinx', info: 'QB', link: '', done: false },
+              { id: 's1-3', label: 'Pachirisu', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-2',
+            name: 'Eterna Forest - From Eterna',
+            rows: [
+              { id: 's2-1', label: 'Buneary', info: 'QB', link: '', done: false },
+              { id: 's2-2', label: 'Misdreavus - [🌙]', info: 'DB', link: '', done: false },
+              { id: 's2-3', label: 'Turtwig - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Turtwig', done: false }
+            ]
+          },
+          {
+            id: 's-3',
+            name: 'Old Chateau - Inside Eterna Forest',
+            rows: [
+              { id: 's3-1', label: 'Gastly', info: 'GB', link: '', done: false },
+              { id: 's3-2', label: 'Rotom - [Gift/🌙]', info: 'DB', link: 'https://imgur.com/a/4ISRKIQ', done: false }
+            ]
+          },
+          {
+            id: 's-4',
+            name: 'Route 207 - From Oreburgh',
+            rows: [
+              { id: 's4-1', label: 'Kricketot - [🌙]', info: 'QB', link: '', done: false },
+              { id: 's4-2', label: 'Hippopotas', info: 'GB', link: 'https://pokemmo.shoutwiki.com/wiki/Hippopotas', done: false }
+            ]
+          },
+          {
+            id: 's-5',
+            name: 'Wayward Cave',
+            link: 'https://imgur.com/a/3iv3LSA',
+            rows: [
+              { id: 's5-1', label: 'Bronzor', info: 'GB', link: '', done: false },
+              { id: 's5-2', label: 'Gible - 88%', info: 'DB', link: 'https://pokemmo.shoutwiki.com/wiki/Gible', done: false }
+            ]
+          },
+          {
+            id: 's-6',
+            name: 'Route 208 - From Hearthome',
+            rows: [
+              { id: 's6-1', label: 'Budew - [🌅/🌙]', info: 'QB', link: '', done: false },
+              { id: 's6-2', label: 'Roselia - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 's6-3', label: 'Bidoof', info: 'QB', link: '', done: false },
+              { id: 's6-4', label: 'Ralts - [Both Genders]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-7',
+            name: 'Great Marsh - From Pastoria',
+            rows: [
+              { id: 's7-1', label: 'Skorupi', info: '', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-8',
+            name: 'Route 213',
+            rows: [
+              { id: 's8-1', label: 'Chatot - 46% - [🌅/☀️]', info: 'UB', link: '', done: false },
+              { id: 's8-2', label: 'Buizel', info: 'QB', link: '', done: false },
+              { id: 's8-3', label: 'Shellos', info: 'QB', link: '', done: false },
+              { id: 's8-4', label: 'Piplup - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Piplup', done: false }
+            ]
+          },
+          {
+            id: 's-9',
+            name: 'Solaceon Ruins',
+            rows: [
+              { id: 's9-1', label: 'Unown', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-10',
+            name: 'Route 209',
+            rows: [
+              { id: 's10-1', label: 'Starly - [🌅/☀️]', info: 'QB', link: '', done: false },
+              { id: 's10-2', label: 'Sudowoodo', info: 'GB', link: '', done: false },
+              { id: 's10-3', label: 'Happiny', info: 'GB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-11',
+            name: 'Veilstone City',
+            rows: [
+              { id: 's11-1', label: 'Porygon - Gift', info: '', link: 'https://imgur.com/a/XDq0CZw', done: false }
+            ]
+          },
+          {
+            id: 's-12',
+            name: 'Route 214',
+            rows: [
+              { id: 's12-1', label: 'Stunky - [🌙]', info: 'QB', link: '', done: false },
+              { id: 's12-2', label: 'Houndour - [🌙]', info: 'GB', link: '', done: false },
+              { id: 's12-3', label: 'Ponyta', info: 'QB', link: '', done: false },
+              { id: 's12-4', label: 'Chimchar - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Chimchar', done: false }
+            ]
+          },
+          {
+            id: 's-13',
+            name: 'Turnback Cave',
+            rows: [
+              { id: 's13-1', label: 'Spiritomb - 52%', info: 'UB', link: 'https://imgur.com/a/YSPQ4AD', done: false }
+            ]
+          },
+          {
+            id: 's-14',
+            name: 'Route 222 - From Sunyshore',
+            rows: [
+              { id: 's14-1', label: 'Magnemite', info: 'QB', link: '', done: false },
+              { id: 's14-2', label: 'Electabuzz - 70%', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-15',
+            name: 'Route 218 - From Canalave',
+            rows: [
+              { id: 's15-1', label: 'Glameow', info: 'QB', link: '', done: false },
+              { id: 's15-2', label: 'Mr Mime - 70%', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-16',
+            name: 'Route 217 - From Snowpoint',
+            rows: [
+              { id: 's16-1', label: 'Snover', info: 'GB', link: '', done: false },
+              { id: 's16-2', label: 'Swinub', info: 'QB', link: '', done: false },
+              { id: 's16-3', label: 'Meditite', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-17',
+            name: 'Victory Road',
+            rows: [
+              { id: 's17-1', label: 'Gabite - 88%', info: 'DB', link: '', done: false },
+              { id: 's17-2', label: 'Onix - 88%', info: 'DB', link: '', done: false },
+              { id: 's17-3', label: 'Rhyhorn', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-18',
+            name: 'Route 229 - From Resort Area',
+            rows: [
+              { id: 's18-1', label: 'Masquerain - [🌊,🌙, Very →]', info: 'QB', link: '', done: false },
+              { id: 's18-2', label: 'Volbeat - [🌙]', info: 'GB', link: '', done: false },
+              { id: 's18-3', label: 'Illumise - [🌙]', info: 'GB', link: '', done: false },
+              { id: 's18-4', label: 'Scyther', info: 'NB', link: '', done: false },
+              { id: 's18-5', label: 'Pinsir', info: 'NB', link: '', done: false }
+            ]
+          },
+          {
+            id: 's-19',
+            name: 'Route 226',
+            rows: [
+              { id: 's19-1', label: 'Relicanth - 70% - [🎣]', info: 'NB', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'HONEY TREE',
+        name: 'HONEY TREE',
+        externalLink: 'https://forums.pokemmo.com/index.php?/topic/154851-shamos-honey-tree-route-for-pokemmo/',
+        locations: [
+          {
+            id: 'ht-1',
+            name: '',
+            rows: [
+              { id: 'ht1-1', label: 'Heracross', info: 'NB', link: '', done: false },
+              { id: 'ht1-2', label: 'Burmy - [Female]', info: 'GB', link: '', done: false },
+              { id: 'ht1-3', label: 'Burmy - [Male]', info: 'GB', link: '', done: false },
+              { id: 'ht1-4', label: 'Combee - [Female]', info: 'GB', link: '', done: false },
+              { id: 'ht1-5', label: 'Munchlax - 78%', info: 'UB', link: '', done: false },
+              { id: 'ht1-6', label: 'Cherubi', info: 'GB', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'UNOVA',
+        name: 'UNOVA',
+        locations: [
+          {
+            id: 'u-1',
+            name: 'Dreamyard',
+            rows: [
+              { id: 'u1-1', label: 'Munna', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-2',
+            name: 'Route 3',
+            rows: [
+              { id: 'u2-1', label: 'Patrat', info: 'QB', link: '', done: false },
+              { id: 'u2-2', label: 'Lillipup', info: 'QB', link: '', done: false },
+              { id: 'u2-3', label: 'Pidove', info: 'QB', link: '', done: false },
+              { id: 'u2-4', label: 'Purrloin', info: 'QB', link: '', done: false },
+              { id: 'u2-5', label: 'Blitzle', info: 'QB', link: '', done: false },
+              { id: 'u2-6', label: 'Tepig - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Tepig', done: false }
+            ]
+          },
+          {
+            id: 'u-3',
+            name: 'Wellspring Cave',
+            rows: [
+              { id: 'u3-1', label: 'Roggenrolla', info: 'QB', link: '', done: false },
+              { id: 'u3-2', label: 'Woobat', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-4',
+            name: 'Pinwheel Forest [Outside]',
+            rows: [
+              { id: 'u4-1', label: 'Croagunk', info: 'UB', link: '', done: false },
+              { id: 'u4-2', label: 'Tympole', info: 'QB', link: '', done: false },
+              { id: 'u4-3', label: 'Riolu', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Riolu', done: false }
+            ]
+          },
+          {
+            id: 'u-5',
+            name: 'Pinwheel Forest - [Inside]',
+            rows: [
+              { id: 'u5-1', label: 'Sewaddle', info: 'QB', link: '', done: false },
+              { id: 'u5-2', label: 'Venipede', info: 'QB', link: '', done: false },
+              { id: 'u5-3', label: 'Petilil', info: 'QB', link: '', done: false },
+              { id: 'u5-4', label: 'Cottonee', info: 'QB', link: '', done: false },
+              { id: 'u5-5', label: 'Pansage', info: 'GB', link: '', done: false },
+              { id: 'u5-6', label: 'Pansear', info: 'GB', link: '', done: false },
+              { id: 'u5-7', label: 'Panpour', info: 'GB', link: '', done: false },
+              { id: 'u5-8', label: 'Snivy - 70%', info: 'UB', link: 'https://pokemmo.shoutwiki.com/wiki/Snivy', done: false }
+            ]
+          },
+          {
+            id: 'u-6',
+            name: 'Desert Resort [Inner]',
+            rows: [
+              { id: 'u6-1', label: 'Sigilyph - 70%', info: 'UB', link: '', done: false },
+              { id: 'u6-2', label: 'Darumaka', info: 'GB', link: '', done: false },
+              { id: 'u6-3', label: 'Sandile', info: 'QB', link: '', done: false },
+              { id: 'u6-4', label: 'Maractus', info: 'QB', link: '', done: false },
+              { id: 'u6-5', label: 'Dwebble', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-7',
+            name: 'Relic Castle',
+            rows: [
+              { id: 'u7-1', label: 'Yamask - [1F]', info: 'QB', link: '', done: false },
+              { id: 'u7-2', label: 'Volcarona - 41%', info: 'NB', link: 'https://pokemmo.shoutwiki.com/wiki/Volcarona', done: false }
+            ]
+          },
+          {
+            id: 'u-8',
+            name: 'Route 16',
+            rows: [
+              { id: 'u8-1', label: 'Solosis - [Over Coat]', info: 'QB', link: '', done: false },
+              { id: 'u8-2', label: 'Gothita', info: 'QB', link: '', done: false },
+              { id: 'u8-3', label: 'Trubbish', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-9',
+            name: 'Lostlorn Forest',
+            rows: [
+              { id: 'u9-1', label: 'Goldeen - [🎣]', info: 'QB', link: '', done: false },
+              { id: 'u9-2', label: 'Zorua - [Lead with Reactive Gas]', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-10',
+            name: 'Route 15',
+            rows: [
+              { id: 'u10-1', label: 'Marowak', info: 'UB', link: '', done: false },
+              { id: 'u10-2', label: 'Sawk - 70%', info: 'UB', link: '', done: false },
+              { id: 'u10-3', label: 'Throh - 70%', info: 'UB', link: '', done: false },
+              { id: 'u10-4', label: 'Kangaskhan - 70%', info: 'UB', link: '', done: false },
+              { id: 'u10-5', label: 'Pupitar - 70%', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-11',
+            name: 'Cold Storage',
+            rows: [
+              { id: 'u11-1', label: 'Timburr', info: 'QB', link: '', done: false },
+              { id: 'u11-2', label: 'Minccino', info: 'QB', link: '', done: false },
+              { id: 'u11-3', label: 'Vanillite', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-12',
+            name: 'Route 6',
+            rows: [
+              { id: 'u12-1', label: 'Deerling', info: 'QB', link: '', done: false },
+              { id: 'u12-2', label: 'Foongus', info: 'QB', link: '', done: false },
+              { id: 'u12-3', label: 'Oshawott', info: 'NB', link: 'https://pokemmo.shoutwiki.com/wiki/Oshawott', done: false }
+            ]
+          },
+          {
+            id: 'u-13',
+            name: 'Mistralton Cave',
+            rows: [
+              { id: 'u13-1', label: 'Axew - 48%', info: 'DB', link: '', done: false },
+              { id: 'u13-2', label: 'Aron - [2F]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-14',
+            name: 'Chargestone - From Mistralton',
+            rows: [
+              { id: 'u14-1', label: 'Tynamo - [B2F]', info: 'GB', link: '', done: false },
+              { id: 'u14-2', label: 'Ferroseed', info: 'QB', link: '', done: false },
+              { id: 'u14-3', label: 'Nosepass', info: 'QB', link: '', done: false },
+              { id: 'u14-4', label: 'Joltik', info: 'QB', link: '', done: false },
+              { id: 'u14-5', label: 'Klink', info: 'GB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-15',
+            name: 'Celestial Tower',
+            rows: [
+              { id: 'u15-1', label: 'Elgyem - [Roof]', info: 'QB', link: '', done: false },
+              { id: 'u15-2', label: 'Litwick', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-16',
+            name: 'Icirrus City',
+            rows: [
+              { id: 'u16-1', label: 'Barboach - [🎣]', info: 'QB', link: '', done: false },
+              { id: 'u16-2', label: 'Stunfisk - [🌊]', info: 'UB', link: '', done: false },
+              { id: 'u16-3', label: 'Shelmet', info: 'QB', link: '', done: false },
+              { id: 'u16-4', label: 'Karrablast - [Shed Skin]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-17',
+            name: 'Twist Mountain',
+            rows: [
+              { id: 'u17-1', label: 'Cubchoo', info: 'GB', link: '', done: false },
+              { id: 'u17-2', label: 'Cryogonal - 48% - [Cold Room]', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-18',
+            name: 'Dragonspiral Tower - Inside',
+            rows: [
+              { id: 'u18-1', label: 'Golett', info: 'QB', link: '', done: false },
+              { id: 'u18-2', label: 'Druddigon - 88%', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-19',
+            name: 'Challengers Cave',
+            rows: [
+              { id: 'u19-1', label: 'Lickitung - 88%', info: 'DB', link: '', done: false },
+              { id: 'u19-2', label: 'Mawile - 88%', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-20',
+            name: 'Route 10',
+            rows: [
+              { id: 'u20-1', label: 'Boufallant - 70% - [Sap Sipper]', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-21',
+            name: 'Victory Road - First Room',
+            rows: [
+              { id: 'u21-1', label: 'Deino - 88%', info: 'DB', link: '', done: false },
+              { id: 'u21-2', label: 'Durant', info: 'UB', link: '', done: false },
+              { id: 'u21-3', label: 'Mienfoo', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-22',
+            name: 'Victory Road - Outside',
+            rows: [
+              { id: 'u22-1', label: 'Heatmor', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-23',
+            name: 'Route 11',
+            rows: [
+              { id: 'u23-1', label: 'Rufflet - [🌅/☀️]', info: 'GB', link: '', done: false },
+              { id: 'u23-2', label: 'Vullaby', info: 'QB', link: '', done: false },
+              { id: 'u23-3', label: 'Pawniard', info: 'QB', link: '', done: false },
+              { id: 'u23-4', label: 'Zangoose', info: 'GB', link: '', done: false },
+              { id: 'u23-5', label: 'Seviper', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-24',
+            name: 'Giant Chasm - Cave',
+            rows: [
+              { id: 'u24-1', label: 'Delibird - 43% - [Vital Spirit]', info: 'DB', link: '', done: false },
+              { id: 'u24-2', label: 'Seel - [🌊]', info: 'QB', link: '', done: false },
+              { id: 'u24-3', label: 'Jynx - 88%', info: 'DB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-25',
+            name: 'Giant Chasm - Crater Forest',
+            rows: [
+              { id: 'u25-1', label: 'Metang/Metagross - 31%', info: 'UB', link: '', done: false },
+              { id: 'u25-2', label: 'Solrock/Lunatone - 70%', info: 'UB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-26',
+            name: 'Undella Town',
+            rows: [
+              { id: 'u26-1', label: 'Staryu - [🌙/🌊]', info: 'QB', link: '', done: false },
+              { id: 'u26-2', label: 'Mantine - 68% - [🌊]', info: 'NB', link: '', done: false },
+              { id: 'u26-3', label: 'Frillish - [🌊]', info: 'QB', link: '', done: false },
+              { id: 'u26-4', label: 'Remoraid - [🎣]', info: 'QB', link: '', done: false },
+              { id: 'u26-5', label: 'Luvdisc - [🎣]', info: 'QB', link: '', done: false },
+              { id: 'u26-6', label: 'Shellder - [🎣]', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-27',
+            name: 'Route 1',
+            rows: [
+              { id: 'u27-1', label: 'Basculin - 68% - [🌊]', info: 'NB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'u-28',
+            name: 'Route 18',
+            rows: [
+              { id: 'u28-1', label: 'Larvest - Gift', info: '', link: 'https://imgur.com/a/v0FZqPH', done: false },
+              { id: 'u28-2', label: 'Finneon - [🎣]', info: 'QB', link: '', done: false },
+              { id: 'u28-3', label: 'Carnivine', info: 'UB', link: '', done: false },
+              { id: 'u28-4', label: 'Scraggy', info: 'QB', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'PHENOS',
+        name: 'PHENOS',
+        locations: [
+          {
+            id: 'p-1',
+            name: 'Grass',
+            rows: [
+              { id: 'p1-1', label: 'Emolga', info: 'QB', link: '', done: false },
+              { id: 'p1-2', label: 'Audino', info: 'QB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'p-2',
+            name: 'Shadow',
+            rows: [
+              { id: 'p2-1', label: 'Ducklett', info: 'QB', link: '', done: false },
+              { id: 'p2-2', label: 'Swanna', info: 'NB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'p-3',
+            name: 'Water',
+            rows: [
+              { id: 'p3-1', label: 'Alomomola', info: 'NB', link: '', done: false }
+            ]
+          },
+          {
+            id: 'p-4',
+            name: 'Dust',
+            rows: [
+              { id: 'p4-1', label: 'Drilbur', info: 'GB', link: '', done: false },
+              { id: 'p4-2', label: 'Excadrill', info: 'DB', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'FOSSIL',
+        name: 'FOSSIL',
+        isFossil: true,
+        locations: [
+          {
+            id: 'f-1',
+            name: '',
+            rows: [
+              { id: 'f1-1', label: 'Omanyte', info: 'Helix', link: '', done: false },
+              { id: 'f1-2', label: 'Kabuto', info: 'Dome', link: '', done: false },
+              { id: 'f1-3', label: 'Aerodactly', info: 'Old Amber', link: 'https://imgur.com/a/dFdBtqj', done: false },
+              { id: 'f1-4', label: 'Lileep', info: 'Root', link: 'https://pokemmo.shoutwiki.com/wiki/Mirage_Tower', done: false },
+              { id: 'f1-5', label: 'Anorith', info: 'Claw', link: 'https://pokemmo.shoutwiki.com/wiki/Mirage_Tower', done: false },
+              { id: 'f1-6', label: 'Cranidos', info: 'Skull', link: '', done: false },
+              { id: 'f1-7', label: 'Shieldon', info: 'Armor', link: '', done: false },
+              { id: 'f1-8', label: 'Tirtouga', info: 'Cover', link: 'https://imgur.com/a/rR6GUG5', done: false },
+              { id: 'f1-9', label: 'Archen', info: 'Plume', link: 'https://imgur.com/a/rR6GUG5', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'LEVELING',
+        name: 'LEVELING',
+        isEvo: true,
+        evoHeader: 'LVL',
+        locations: [
+          {
+            id: 'evo-lvl-1',
+            name: '',
+            rows: [
+              { id: 'el-1', label: 'Bulbasaur/Ivysaur/Venusaur', info: '32', link: '', done: false },
+              { id: 'el-2', label: 'Charmander/Chameleon/Charizard', info: '36', link: '', done: false },
+              { id: 'el-3', label: 'Squirtle/Wartortle/Blastoise', info: '36', link: '', done: false },
+              { id: 'el-4', label: 'Caterpie/Metapod/Butterfree', info: '10', link: '', done: false },
+              { id: 'el-5', label: 'Weedle/Kakuna/Beedrill', info: '10', link: '', done: false },
+              { id: 'el-6', label: 'Pidgey/Pidgeotto/Pidgeot', info: '36', link: '', done: false },
+              { id: 'el-7', label: 'Rattata/Raticate', info: '20', link: '', done: false },
+              { id: 'el-8', label: 'Spearow/Fearow', info: '20', link: '', done: false },
+              { id: 'el-9', label: 'Ekans/Arbok', info: '22', link: '', done: false },
+              { id: 'el-10', label: 'Sandshrew/Sandslash', info: '22', link: '', done: false },
+              { id: 'el-11', label: 'Nidoran F/Nidorina', info: '16', link: '', done: false },
+              { id: 'el-12', label: 'Nidoran M/Nidorino', info: '16', link: '', done: false },
+              { id: 'el-13', label: 'Zubat/Golbat', info: '22', link: '', done: false },
+              { id: 'el-14', label: 'Oddish/Gloom', info: '21', link: '', done: false },
+              { id: 'el-15', label: 'Paras/Parasect', info: '24', link: '', done: false },
+              { id: 'el-16', label: 'Venonat/Venomoth', info: '31', link: '', done: false },
+              { id: 'el-17', label: 'Diglett/Dugtrio', info: '26', link: '', done: false },
+              { id: 'el-18', label: 'Meowth/Persian', info: '28', link: '', done: false },
+              { id: 'el-19', label: 'Psyduck/Golduck', info: '33', link: '', done: false },
+              { id: 'el-20', label: 'Mankey/Primeape', info: '28', link: '', done: false },
+              { id: 'el-21', label: 'Poliwag/Poliwhirl', info: '25', link: '', done: false },
+              { id: 'el-22', label: 'Abra/Kadabra', info: '16', link: '', done: false },
+              { id: 'el-23', label: 'Machop/Machoke', info: '28', link: '', done: false },
+              { id: 'el-24', label: 'Bellsprout/Weepinbell', info: '21', link: '', done: false },
+              { id: 'el-25', label: 'Tentacool/Tentacruel', info: '30', link: '', done: false },
+              { id: 'el-26', label: 'Geodude/Graveler', info: '25', link: '', done: false },
+              { id: 'el-27', label: 'Ponyta/Rapidash', info: '40', link: '', done: false },
+              { id: 'el-28', label: 'Slowpoke/Slowbro', info: '37', link: '', done: false },
+              { id: 'el-29', label: 'Magnemite/Magneton', info: '30', link: '', done: false },
+              { id: 'el-30', label: 'Doduo/Dodrio', info: '31', link: '', done: false },
+              { id: 'el-31', label: 'Seel/Dewgong', info: '34', link: '', done: false },
+              { id: 'el-32', label: 'Grimer/Muk', info: '38', link: '', done: false },
+              { id: 'el-33', label: 'Gastly/Haunter', info: '25', link: '', done: false },
+              { id: 'el-34', label: 'Drowzee/Hypno', info: '26', link: '', done: false },
+              { id: 'el-35', label: 'Krabby/Kingler', info: '28', link: '', done: false },
+              { id: 'el-36', label: 'Voltorb/Electrode', info: '30', link: '', done: false },
+              { id: 'el-37', label: 'Cubone/Marowak', info: '28', link: '', done: false },
+              { id: 'el-38', label: 'Koffing/Weezing', info: '35', link: '', done: false },
+              { id: 'el-39', label: 'Rhyhorn/Rhydon', info: '42', link: '', done: false },
+              { id: 'el-40', label: 'Horsea/Seadra', info: '32', link: '', done: false },
+              { id: 'el-41', label: 'Goldeen/Seaking', info: '33', link: '', done: false },
+              { id: 'el-42', label: 'Magikarp/Gyarados', info: '20', link: '', done: false },
+              { id: 'el-43', label: 'Omanyte/Omastar', info: '40', link: '', done: false },
+              { id: 'el-44', label: 'Kabuto/Kabutops', info: '40', link: '', done: false },
+              { id: 'el-45', label: 'Dratini/Dragonair/Dragonite', info: '55', link: '', done: false },
+              { id: 'el-46', label: 'Chikorita/Bayleef/Meganium', info: '32', link: '', done: false },
+              { id: 'el-47', label: 'Cyndaquil/Quilava/Typhlosion', info: '36', link: '', done: false },
+              { id: 'el-48', label: 'Totodile/Croconaw/Feraligatr', info: '30', link: '', done: false },
+              { id: 'el-49', label: 'Sentret/Furret', info: '15', link: '', done: false },
+              { id: 'el-50', label: 'Hoothoot/Noctowl', info: '20', link: '', done: false },
+              { id: 'el-51', label: 'Ledyba/Ledian', info: '18', link: '', done: false },
+              { id: 'el-52', label: 'Spinarak/Ariados', info: '22', link: '', done: false },
+              { id: 'el-53', label: 'Chinchou/Lanturn', info: '27', link: '', done: false },
+              { id: 'el-54', label: 'Natu/Xatu', info: '25', link: '', done: false },
+              { id: 'el-55', label: 'Mareep/Flaaffly/Ampharos', info: '30', link: '', done: false },
+              { id: 'el-56', label: 'Marill/Azumarill', info: '18', link: '', done: false },
+              { id: 'el-57', label: 'Hoppip/Skiploom/Jumpluff', info: '27', link: '', done: false },
+              { id: 'el-58', label: 'Wooper/Quagsire', info: '20', link: '', done: false },
+              { id: 'el-59', label: 'Pineco/Forretress', info: '31', link: '', done: false },
+              { id: 'el-60', label: 'Snubbull/Granbull', info: '23', link: '', done: false },
+              { id: 'el-61', label: 'Teddiursa/Ursaring', info: '30', link: '', done: false },
+              { id: 'el-62', label: 'Slugma/Magcargo', info: '38', link: '', done: false },
+              { id: 'el-63', label: 'Swinub/Piloswine', info: '33', link: '', done: false },
+              { id: 'el-64', label: 'Remoraid/Octillery', info: '25', link: '', done: false },
+              { id: 'el-65', label: 'Houndour/Houndoom', info: '24', link: '', done: false },
+              { id: 'el-66', label: 'Phanpy/Donphan', info: '25', link: '', done: false },
+              { id: 'el-67', label: 'Larvitar/Pupitar/Tyranitar', info: '55', link: '', done: false },
+              { id: 'el-68', label: 'Treecko/Grovyle/Sceptile', info: '36', link: '', done: false },
+              { id: 'el-69', label: 'Torchic/Combusken/Blaziken', info: '36', link: '', done: false },
+              { id: 'el-70', label: 'Mudkip/Marshtomp/Swampert', info: '36', link: '', done: false },
+              { id: 'el-71', label: 'Poochyena/Mightyena', info: '18', link: '', done: false },
+              { id: 'el-72', label: 'Zigzagoon/Linoone', info: '20', link: '', done: false },
+              { id: 'el-73', label: 'Silcoon/Beautifly', info: '10', link: '', done: false },
+              { id: 'el-74', label: 'Cascoon/Dustox', info: '10', link: '', done: false },
+              { id: 'el-75', label: 'Lotad/Lombre', info: '14', link: '', done: false },
+              { id: 'el-76', label: 'Seedot/Nuzleaf', info: '14', link: '', done: false },
+              { id: 'el-77', label: 'Taillow/Swellow', info: '22', link: '', done: false },
+              { id: 'el-78', label: 'Wingull/Pelipper', info: '25', link: '', done: false },
+              { id: 'el-79', label: 'Ralts F/Kirlia/Gardevoir', info: '30', link: '', done: false },
+              { id: 'el-80', label: 'Ralts M/Kirlia', info: '20', link: '', done: false },
+              { id: 'el-81', label: 'Surskit/Marquerain', info: '22', link: '', done: false },
+              { id: 'el-82', label: 'Shroomish/Breloom', info: '23', link: '', done: false },
+              { id: 'el-83', label: 'Slakoth/Vigoroth/Slaking', info: '36', link: '', done: false },
+              { id: 'el-84', label: 'Whismur/Loudred/Exploud', info: '40', link: '', done: false },
+              { id: 'el-85', label: 'Makuhita/Hariyama', info: '24', link: '', done: false },
+              { id: 'el-86', label: 'Aron/Lairon/Aggron', info: '41', link: '', done: false },
+              { id: 'el-87', label: 'Meditite/Medicham', info: '37', link: '', done: false },
+              { id: 'el-88', label: 'Electrike/Manectric', info: '26', link: '', done: false },
+              { id: 'el-89', label: 'Gulpin/Swalot', info: '26', link: '', done: false },
+              { id: 'el-90', label: 'Carvanha/Sharpedo', info: '30', link: '', done: false },
+              { id: 'el-91', label: 'Wailmer/Wailord', info: '40', link: '', done: false },
+              { id: 'el-92', label: 'Numel/Camerupt', info: '33', link: '', done: false },
+              { id: 'el-93', label: 'Spoink/Grumpig', info: '32', link: '', done: false },
+              { id: 'el-94', label: 'Trapinch/Vibrava/Flygon', info: '45', link: '', done: false },
+              { id: 'el-95', label: 'Cacnea/Cacturne', info: '32', link: '', done: false },
+              { id: 'el-96', label: 'Swablu/Altaria', info: '35', link: '', done: false },
+              { id: 'el-97', label: 'Barboach/Whismcash', info: '30', link: '', done: false },
+              { id: 'el-98', label: 'Corphish/Crawdaunt', info: '30', link: '', done: false },
+              { id: 'el-99', label: 'Baltoy/Claydol', info: '36', link: '', done: false },
+              { id: 'el-100', label: 'Lileep/Cradily', info: '40', link: '', done: false },
+              { id: 'el-101', label: 'Anorith/Armaldo', info: '40', link: '', done: false },
+              { id: 'el-102', label: 'Shuppet/Banette', info: '37', link: '', done: false },
+              { id: 'el-103', label: 'Duskull/Dusclops', info: '37', link: '', done: false },
+              { id: 'el-104', label: 'Snorunt/Glalie', info: '42', link: '', done: false },
+              { id: 'el-105', label: 'Spheal/Sealeo/Walrein', info: '44', link: '', done: false },
+              { id: 'el-106', label: 'Bagon/Shelgon/Salamence', info: '50', link: '', done: false },
+              { id: 'el-107', label: 'Beldum/Metang/Metagross', info: '45', link: '', done: false },
+              { id: 'el-108', label: 'Turtwig/Grotle/Torterra', info: '32', link: '', done: false },
+              { id: 'el-109', label: 'Chimchar/Monferno/Infernape', info: '36', link: '', done: false },
+              { id: 'el-110', label: 'Piplup/Prinplup/Empoleon', info: '36', link: '', done: false },
+              { id: 'el-111', label: 'Starly/Staravia/Staraptor', info: '34', link: '', done: false },
+              { id: 'el-112', label: 'Bidoof/Bibarel', info: '15', link: '', done: false },
+              { id: 'el-113', label: 'Kricketot/Kricketune', info: '10', link: '', done: false },
+              { id: 'el-114', label: 'Shinx/Luxio/Luxray', info: '29', link: '', done: false },
+              { id: 'el-115', label: 'Cranidos/Rampardos', info: '30', link: '', done: false },
+              { id: 'el-116', label: 'Shieldon/Bastiodon', info: '30', link: '', done: false },
+              { id: 'el-117', label: 'Burmy F/Wormadam', info: '20', link: '', done: false },
+              { id: 'el-118', label: 'Burmy M/Mothim', info: '20', link: '', done: false },
+              { id: 'el-119', label: 'Combee F/Vespiqueen', info: '21', link: '', done: false },
+              { id: 'el-120', label: 'Buizel/Floatzel', info: '26', link: '', done: false },
+              { id: 'el-121', label: 'Cherubi/Cherrim', info: '25', link: '', done: false },
+              { id: 'el-122', label: 'Shellos/Gastrodon', info: '30', link: '', done: false },
+              { id: 'el-123', label: 'Drifloon/Drifblim', info: '28', link: '', done: false },
+              { id: 'el-124', label: 'Glameow/Purugly', info: '38', link: '', done: false },
+              { id: 'el-125', label: 'Stunky/Skuntank', info: '34', link: '', done: false },
+              { id: 'el-126', label: 'Bronzor/Bronzong', info: '33', link: '', done: false },
+              { id: 'el-127', label: 'Gible/Gabite/Garchomp', info: '48', link: '', done: false },
+              { id: 'el-128', label: 'Hippopotas/Hippowdon', info: '34', link: '', done: false },
+              { id: 'el-129', label: 'Skorupi/Drapion', info: '40', link: '', done: false },
+              { id: 'el-130', label: 'Croagunk/Toxicroak', info: '37', link: '', done: false },
+              { id: 'el-131', label: 'Finneon/Lumineon', info: '31', link: '', done: false },
+              { id: 'el-132', label: 'Snover/Abomasnow', info: '40', link: '', done: false },
+              { id: 'el-133', label: 'Snivy/Servine/Serperior', info: '36', link: '', done: false },
+              { id: 'el-134', label: 'Tepig/Pignite/Emboar', info: '36', link: '', done: false },
+              { id: 'el-135', label: 'Oshawott/Dewott/Samurott', info: '36', link: '', done: false },
+              { id: 'el-136', label: 'Patrat/Wachog', info: '20', link: '', done: false },
+              { id: 'el-137', label: 'Lillipup/Herdier/Stoutland', info: '32', link: '', done: false },
+              { id: 'el-138', label: 'Purrloin/Liepard', info: '20', link: '', done: false },
+              { id: 'el-139', label: 'Pidove/Tranquill/Unfezant', info: '32', link: '', done: false },
+              { id: 'el-140', label: 'Blitzle/Zebstrika', info: '27', link: '', done: false },
+              { id: 'el-141', label: 'Roggenrola/Boldore', info: '25', link: '', done: false },
+              { id: 'el-142', label: 'Timburr/Gurdurr', info: '25', link: '', done: false },
+              { id: 'el-143', label: 'Tympole/Palpitoad/Seismitoad', info: '36', link: '', done: false },
+              { id: 'el-144', label: 'Sewaddle/Swadloon', info: '20', link: '', done: false },
+              { id: 'el-145', label: 'Venipede/Whirlipede/Scolipede', info: '30', link: '', done: false },
+              { id: 'el-146', label: 'Sandile/Krokorok/Krookodile', info: '40', link: '', done: false },
+              { id: 'el-147', label: 'Darumaka/Darmanitan', info: '35', link: '', done: false },
+              { id: 'el-148', label: 'Dwebble/Crustle', info: '34', link: '', done: false },
+              { id: 'el-149', label: 'Scraggy/Scrafty', info: '39', link: '', done: false },
+              { id: 'el-150', label: 'Yamask/Cofagrigus', info: '34', link: '', done: false },
+              { id: 'el-151', label: 'Tirtouga/Carracosta', info: '37', link: '', done: false },
+              { id: 'el-152', label: 'Archen/Archeops', info: '37', link: '', done: false },
+              { id: 'el-153', label: 'Trubbish/Garbordor', info: '36', link: '', done: false },
+              { id: 'el-154', label: 'Zorua/Zoruark', info: '30', link: '', done: false },
+              { id: 'el-155', label: 'Gothita/Gothorita/Gothitelle', info: '47', link: '', done: false },
+              { id: 'el-156', label: 'Solosis/Duosion/Reuniclus', info: '41', link: '', done: false },
+              { id: 'el-157', label: 'Vanillite/Vanillish/Vanilluxe', info: '47', link: '', done: false },
+              { id: 'el-158', label: 'Deerling/Sawsbuck', info: '34', link: '', done: false },
+              { id: 'el-159', label: 'Foongus/Amoongus', info: '39', link: '', done: false },
+              { id: 'el-160', label: 'Frillish/Jellicent', info: '40', link: '', done: false },
+              { id: 'el-161', label: 'Joltik/Galvantula', info: '36', link: '', done: false },
+              { id: 'el-162', label: 'Ferroseed/Ferrotorn', info: '40', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'ITEMS EVO',
+        name: 'ITEMS EVO',
+        isEvo: true,
+        evoHeader: 'ITEM',
+        locations: [
+          {
+            id: 'evo-itm-1',
+            name: '',
+            rows: [
+              { id: 'ei-1', label: 'Raichu', info: 'Thunder Stone', link: '', done: false },
+              { id: 'ei-2', label: 'Gallade', info: 'Dawn Stone', link: '', done: false },
+              { id: 'ei-3', label: 'Froslass', info: 'Dawn Stone - Female', link: '', done: false },
+              { id: 'ei-4', label: 'Gorebyss', info: 'Deepseascale', link: '', done: false },
+              { id: 'ei-5', label: 'Huntail', info: 'Deepseatooth', link: '', done: false },
+              { id: 'ei-6', label: 'Kingdra', info: 'Dragon Scale', link: '', done: false },
+              { id: 'ei-7', label: 'Porygon-Z', info: 'Dubious Disc', link: '', done: false },
+              { id: 'ei-8', label: 'Mismagius', info: 'Dusk Stone', link: '', done: false },
+              { id: 'ei-9', label: 'Honchkrow', info: 'Dusk Stone', link: '', done: false },
+              { id: 'ei-10', label: 'Chandelure', info: 'Dusk Stone', link: '', done: false },
+              { id: 'ei-11', label: 'Electivire', info: 'Electirilizer', link: '', done: false },
+              { id: 'ei-12', label: 'Ninetales', info: 'Fire Stone', link: '', done: false },
+              { id: 'ei-13', label: 'Arcanine', info: 'Fire Stone', link: '', done: false },
+              { id: 'ei-14', label: 'Flareon', info: 'Fire Stone', link: '', done: false },
+              { id: 'ei-15', label: 'Simisear', info: 'Fire Stone', link: '', done: false },
+              { id: 'ei-16', label: 'Politoed', info: 'Kings Rock', link: '', done: false },
+              { id: 'ei-17', label: 'Slowking', info: 'Kings Rock', link: '', done: false },
+              { id: 'ei-18', label: 'Vileplume', info: 'Leaf Stone', link: '', done: false },
+              { id: 'ei-19', label: 'Victreebel', info: 'Leaf Stone', link: '', done: false },
+              { id: 'ei-20', label: 'Exeggutor', info: 'Leaf Stone', link: '', done: false },
+              { id: 'ei-21', label: 'Shiftry', info: 'Leaf Stone', link: '', done: false },
+              { id: 'ei-22', label: 'Simisage', info: 'Leaf Stone', link: '', done: false },
+              { id: 'ei-23', label: 'Magmortar', info: 'Magmarizer', link: '', done: false },
+              { id: 'ei-24', label: 'Steelix', info: 'Metal Coat', link: '', done: false },
+              { id: 'ei-25', label: 'Scizor', info: 'Metal Coat', link: '', done: false },
+              { id: 'ei-26', label: 'Milotic', info: '22 Blue PokéBLOCK/ 11 Plus', link: '', done: false },
+              { id: 'ei-27', label: 'Nidoqueen', info: 'Moon Stone', link: '', done: false },
+              { id: 'ei-28', label: 'Nidoking', info: 'Moon Stone', link: '', done: false },
+              { id: 'ei-29', label: 'Clefable', info: 'Moon Stone', link: '', done: false },
+              { id: 'ei-30', label: 'Wigglytuff', info: 'Moon Stone', link: '', done: false },
+              { id: 'ei-31', label: 'Delcatty', info: 'Moon Stone', link: '', done: false },
+              { id: 'ei-32', label: 'Musharna', info: 'Moon Stone', link: '', done: false },
+              { id: 'ei-33', label: 'Rhyperior', info: 'Protector', link: '', done: false },
+              { id: 'ei-34', label: 'Weavile', info: 'Razor Claw at 🌙', link: '', done: false },
+              { id: 'ei-35', label: 'Gliscor', info: 'Razor Fang at 🌙', link: '', done: false },
+              { id: 'ei-36', label: 'Dusknoir', info: 'Reaper Cloth', link: '', done: false },
+              { id: 'ei-37', label: 'Roserade', info: 'Shiny Stone', link: '', done: false },
+              { id: 'ei-38', label: 'Togekiss', info: 'Shiny Stone', link: '', done: false },
+              { id: 'ei-39', label: 'Cinccino', info: 'Shiny Stone', link: '', done: false },
+              { id: 'ei-40', label: 'Bellossom', info: 'Sun Stone', link: '', done: false },
+              { id: 'ei-41', label: 'Sunflora', info: 'Sun Stone', link: '', done: false },
+              { id: 'ei-42', label: 'Whimsicott', info: 'Sun Stone', link: '', done: false },
+              { id: 'ei-43', label: 'Lilligant', info: 'Sun Stone', link: '', done: false },
+              { id: 'ei-44', label: 'Jolteon', info: 'Thunder Stone', link: '', done: false },
+              { id: 'ei-45', label: 'Eelektross', info: 'Thunderstone', link: '', done: false },
+              { id: 'ei-46', label: 'Porygon2', info: 'Up-Grade', link: '', done: false },
+              { id: 'ei-47', label: 'Poliwrath', info: 'Water Stone', link: '', done: false },
+              { id: 'ei-48', label: 'Cloyster', info: 'Water Stone', link: '', done: false },
+              { id: 'ei-49', label: 'Starmie', info: 'Water Stone', link: '', done: false },
+              { id: 'ei-50', label: 'Vaporeon', info: 'Water Stone', link: '', done: false },
+              { id: 'ei-51', label: 'Ludicolo', info: 'Water Stone', link: '', done: false },
+              { id: 'ei-52', label: 'Simipour', info: 'Water Stone', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'BREED',
+        name: 'BREED',
+        isEvo: true,
+        evoHeader: 'ITEM',
+        locations: [
+          {
+            id: 'evo-brd-1',
+            name: '',
+            rows: [
+              { id: 'eb-1', label: 'Larvitar', info: '-', link: '', done: false },
+              { id: 'eb-2', label: 'Gible', info: '-', link: '', done: false },
+              { id: 'eb-3', label: 'Cubone', info: '-', link: '', done: false },
+              { id: 'eb-4', label: 'Elekid', info: '-', link: '', done: false },
+              { id: 'eb-5', label: 'Surskit', info: '-', link: '', done: false },
+              { id: 'eb-6', label: 'Pichu', info: '-', link: '', done: false },
+              { id: 'eb-7', label: 'Cleffa', info: '-', link: '', done: false },
+              { id: 'eb-8', label: 'Igglybuff', info: '-', link: '', done: false },
+              { id: 'eb-9', label: 'Smoochum', info: '-', link: '', done: false },
+              { id: 'eb-10', label: 'Azurill', info: 'Sea Incense', link: '', done: false },
+              { id: 'eb-11', label: 'Wynaut', info: 'Lax Incense', link: '', done: false },
+              { id: 'eb-12', label: 'Bonsly', info: 'Rock Incense', link: '', done: false },
+              { id: 'eb-13', label: 'Mime Jr.', info: 'Odd Incense', link: '', done: false },
+              { id: 'eb-14', label: 'Mantyke', info: 'Wave Incense', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'GIMMICK',
+        name: 'GIMMICK',
+        isEvo: true,
+        evoHeader: 'METHOD',
+        locations: [
+          {
+            id: 'evo-gim-1',
+            name: '',
+            rows: [
+              { id: 'eg-1', label: 'Ninjask', info: 'Evo Nincada', link: '', done: false },
+              { id: 'eg-2', label: 'Shedinja', info: 'Evo Nincada with empty slot', link: '', done: false },
+              { id: 'eg-3', label: 'Ambipom', info: 'LVL Up with Double Hit', link: '', done: false },
+              { id: 'eg-4', label: 'Lickilicky', info: 'LVL Up with Rollout', link: '', done: false },
+              { id: 'eg-5', label: 'Yanmega', info: 'LVL Up with Ancient Power', link: '', done: false },
+              { id: 'eg-6', label: 'Mamoswine', info: 'LVL Up with Ancient Power', link: '', done: false },
+              { id: 'eg-7', label: 'Tangrowth', info: 'LVL Up with Ancient Power', link: '', done: false },
+              { id: 'eg-8', label: 'Glaceon', info: 'LVL Up next to Icy Rock', link: 'https://pokemmo.shoutwiki.com/wiki/Icy_rock', done: false },
+              { id: 'eg-9', label: 'Leafeon', info: 'LVL Up next to Mossy Rock', link: 'https://pokemmo.shoutwiki.com/wiki/Mossy_rock', done: false },
+              { id: 'eg-10', label: 'Magnezone', info: 'LVL Up in Magnetic Zone', link: 'https://pokemmo.shoutwiki.com/wiki/Special_magnetic_field', done: false },
+              { id: 'eg-11', label: 'Probopass', info: 'LVL Up in Magnetic Zone', link: 'https://pokemmo.shoutwiki.com/wiki/Special_magnetic_field', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'HAPPINESS',
+        name: 'HAPPINESS',
+        isEvo: true,
+        evoHeader: 'INFO',
+        externalLink: 'https://cdn.discordapp.com/attachments/1113356562560462888/1206015203670761494/image.png?ex=6a6937af&is=6a67e62f&hm=8faf3b59ded81c76ffd555e17acfc67f7e49f266f61bb7dc0acbf5f4010d1586&',
+        locations: [
+          {
+            id: 'evo-hap-1',
+            name: '',
+            rows: [
+              { id: 'eh-1', label: 'Umbreon - 🌙', info: 'Night', link: '', done: false },
+              { id: 'eh-2', label: 'Chimecho - 🌙', info: 'Night', link: '', done: false },
+              { id: 'eh-3', label: 'Espeon - ☀️', info: 'Day', link: '', done: false },
+              { id: 'eh-4', label: 'Leavanny', info: 'Happy', link: '', done: false },
+              { id: 'eh-5', label: 'Lopunny', info: 'Happy', link: '', done: false },
+              { id: 'eh-6', label: 'Lucario', info: 'Happy', link: '', done: false },
+              { id: 'eh-7', label: 'Swoobat', info: 'Happy', link: '', done: false },
+              { id: 'eh-8', label: 'Crobat', info: 'Happy', link: '', done: false },
+              { id: 'eh-9', label: 'Snorlax', info: 'Happy', link: '', done: false },
+              { id: 'eh-10', label: 'Togetic', info: 'Happy', link: '', done: false },
+              { id: 'eh-11', label: 'Blissey', info: 'Happy', link: '', done: false }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'TRADE',
+        name: 'TRADE',
+        isEvo: true,
+        evoHeader: 'INFO',
+        locations: [
+          {
+            id: 'evo-trd-1',
+            name: '',
+            rows: [
+              { id: 'et-1', label: 'Accelgor', info: 'Trade', link: '', done: false },
+              { id: 'et-2', label: 'Alakazam', info: 'Trade', link: '', done: false },
+              { id: 'et-3', label: 'Conkeldurr', info: 'Trade', link: '', done: false },
+              { id: 'et-4', label: 'Escavalier', info: 'Trade', link: '', done: false },
+              { id: 'et-5', label: 'Gengar', info: 'Trade', link: '', done: false },
+              { id: 'et-6', label: 'Gigalith', info: 'Trade', link: '', done: false },
+              { id: 'et-7', label: 'Golem', info: 'Trade', link: '', done: false },
+              { id: 'et-8', label: 'Machamp', info: 'Trade', link: '', done: false }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // STATE & LOCALSTORAGE
+    // =========================================================================
+    const STORAGE_KEY = 'pokemmo_alt_dex_sheet_v3';
+    const GUIDE_VISIBLE_KEY = 'pokemmo_alt_dex_guide_visible_v1';
+
+    let sheetData = loadSheetData();
+    let isGuideVisible = loadGuideVisibility();
+    let searchQuery = '';
+    let statusFilter = 'ALL';
+    let ballFilter = 'ALL';
+    let isEditMode = false;
+
+    function loadGuideVisibility() {
+      try {
+        const saved = localStorage.getItem(GUIDE_VISIBLE_KEY);
+        if (saved !== null) return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error loading guide state:', e);
+      }
+      return true;
+    }
+
+    function applyGuideVisibility() {
+      const section = document.getElementById('dex-guide-section');
+      const btn = document.getElementById('toggle-guide-btn');
+      if (section) {
+        section.style.display = isGuideVisible ? '' : 'none';
+      }
+      if (btn) {
+        btn.textContent = isGuideVisible ? 'Guía: ON' : 'Guía: OFF';
+        btn.classList.toggle('bg-[#8a75d6]', !isGuideVisible);
+        btn.classList.toggle('text-[#121212]', !isGuideVisible);
+      }
+    }
+
+    function toggleGuideBanner() {
+      isGuideVisible = !isGuideVisible;
+      try {
+        localStorage.setItem(GUIDE_VISIBLE_KEY, JSON.stringify(isGuideVisible));
+      } catch (e) {
+        console.error('Error saving guide state:', e);
+      }
+      applyGuideVisibility();
+    }
+
+    function loadSheetData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error loading storage:', e);
+      }
+      return JSON.parse(JSON.stringify(DEFAULT_SHEET_DATA));
+    }
+
+    function saveSheetData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sheetData));
+        updateGlobalStats();
+      } catch (e) {
+        console.error('Error saving storage:', e);
+      }
+    }
+
+    // =========================================================================
+    // STATS & BALL COLOR MAPPING
+    // =========================================================================
+    const BALL_CODES = ['QB', 'UB', 'DB', 'GB', 'NB'];
+
+    function getInfoColorClass(info, isFossilCol, isEvoCol) {
+      if (isEvoCol) return 'evo-meta-cell';
+      if (!info) return 'ball-NONE';
+      const upper = info.trim().toUpperCase();
+      if (BALL_CODES.includes(upper)) return `ball-${upper}`;
+      if (isFossilCol) return 'ball-FOSSIL';
+      return 'ball-FOSSIL';
+    }
+
+    function updateGlobalStats() {
+      let total = 0;
+      let done = 0;
+      sheetData.forEach(region => {
+        region.locations.forEach(loc => {
+          loc.rows.forEach(row => {
+            total++;
+            if (row.done) done++;
+          });
+        });
+      });
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      document.getElementById('global-progress-text').textContent = `${done} / ${total} (${pct}%)`;
+      document.getElementById('global-progress-bar').style.width = `${pct}%`;
+    }
+
+    // =========================================================================
+    // FILTERING & RENDERING THE SPREADSHEET
+    // =========================================================================
+    function rowMatchesFilter(row, locName, regionName, isFossilCol, isEvoCol) {
+      if (statusFilter === 'DONE' && !row.done) return false;
+      if (statusFilter === 'PENDING' && row.done) return false;
+
+      if (ballFilter !== 'ALL') {
+        if (ballFilter === 'FOSSIL') {
+          if (isEvoCol) return false;
+          if (!isFossilCol && BALL_CODES.includes((row.info || '').toUpperCase())) return false;
+          if (!row.info) return false;
+        } else {
+          if (isEvoCol || (row.info || '').toUpperCase() !== ballFilter) return false;
+        }
+      }
+
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        const hay = `${row.label} ${row.info} ${locName} ${regionName}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+
+      return true;
+    }
+
+    function renderSpreadsheet() {
+      const board = document.getElementById('spreadsheet-board');
+      board.classList.toggle('edit-mode', isEditMode);
+      board.innerHTML = '';
+
+      sheetData.forEach(region => {
+        const isFossilCol = Boolean(region.isFossil);
+        const isEvoCol = Boolean(region.isEvo);
+
+        // Build filtered locations for this column
+        const filteredLocations = region.locations
+          .map(loc => {
+            const visibleRows = loc.rows.filter(r =>
+              rowMatchesFilter(r, loc.name, region.name, isFossilCol, isEvoCol)
+            );
+            return { ...loc, visibleRows };
+          })
+          .filter(loc => loc.visibleRows.length > 0);
+
+        if (filteredLocations.length === 0 && (searchQuery || statusFilter !== 'ALL' || ballFilter !== 'ALL')) {
+          return;
+        }
+
+        const colWrapper = document.createElement('section');
+        colWrapper.className = `region-sheet ${isFossilCol || isEvoCol ? 'wide-fossil' : ''}`;
+
+        const regionTitleHtml = region.externalLink
+          ? `<a href="${escapeHtml(region.externalLink)}" target="_blank" rel="noopener noreferrer" title="Abrir referencia de ${escapeHtml(region.name)}">${escapeHtml(region.name)}</a>`
+          : escapeHtml(region.name);
+
+        const infoColHeader = isEvoCol ? (region.evoHeader || 'INFO') : 'INFO';
+        const infoColClass = (isFossilCol || isEvoCol) ? 'col-info-fossil' : 'col-info';
+
+        let tableHtml = `
+          <table class="sheet-table">
+            <colgroup>
+              <col class="col-name" />
+              <col class="${infoColClass}" />
+              <col class="col-done" />
+            </colgroup>
+            <thead>
+              <tr class="region-header-row">
+                <th class="region-title-cell">${regionTitleHtml}</th>
+                <th class="meta-col-header">${escapeHtml(infoColHeader)}</th>
+                <th class="meta-col-header">DONE</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        filteredLocations.forEach(loc => {
+          if (loc.name && loc.name.trim() !== '') {
+            const locTitle = loc.link
+              ? `<a href="${escapeHtml(loc.link)}" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">${escapeHtml(loc.name)}</a>`
+              : escapeHtml(loc.name);
+
+            tableHtml += `
+              <tr class="location-header-row">
+                <td colspan="3" title="${escapeHtml(loc.name)}">
+                  <div class="flex items-center justify-center gap-1">
+                    <span
+                      ${isEditMode ? 'contenteditable="true"' : ''}
+                      onblur="editLocationName('${region.id}', '${loc.id}', this.innerText)"
+                      onkeydown="handleInlineKey(event)"
+                    >${locTitle}</span>
+                    ${
+                      isEditMode
+                        ? `<button onclick="quickAddRow('${region.id}', '${escapeJs(loc.name)}')" class="ml-1 px-1 bg-[#8a75d6] text-black rounded text-[10px] font-bold cursor-pointer" title="Añadir fila aquí">+</button>`
+                        : ''
+                    }
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+
+          loc.visibleRows.forEach(row => {
+            const infoClass = getInfoColorClass(row.info, isFossilCol, isEvoCol);
+
+            let nameContent = '';
+            if (row.link && !isEditMode) {
+              nameContent = `<a href="${escapeHtml(row.link)}" target="_blank" rel="noopener noreferrer" class="poke-link" title="Abrir referencia: ${escapeHtml(row.link)}">${escapeHtml(row.label)}</a>`;
+            } else {
+              nameContent = `<span
+                ${isEditMode ? 'contenteditable="true"' : ''}
+                onblur="editRowField('${region.id}', '${loc.id}', '${row.id}', 'label', this.innerText)"
+                onkeydown="handleInlineKey(event)"
+              >${escapeHtml(row.label)}</span>`;
+            }
+
+            const deleteBtn = isEditMode
+              ? `<button onclick="deleteRow('${region.id}', '${loc.id}', '${row.id}')" class="text-red-400 hover:text-red-300 font-bold ml-1 cursor-pointer" title="Eliminar">×</button>`
+              : '';
+
+            tableHtml += `
+              <tr class="poke-row ${row.done ? 'is-done' : ''}" id="row-${row.id}">
+                <td class="poke-name-cell" title="${escapeHtml(row.label)}">
+                  <div class="flex items-center justify-between">
+                    <span class="truncate">${nameContent}</span>
+                    ${deleteBtn}
+                  </div>
+                </td>
+                <td
+                  class="info-cell ${infoClass}"
+                  title="${escapeHtml(row.info || '')}"
+                  ${isEditMode ? 'contenteditable="true"' : ''}
+                  onblur="editRowField('${region.id}', '${loc.id}', '${row.id}', 'info', this.innerText)"
+                  onkeydown="handleInlineKey(event)"
+                >${escapeHtml(row.info || '')}</td>
+                <td class="done-cell" onclick="handleCellCheckboxClick(event, '${region.id}', '${loc.id}', '${row.id}')">
+                  <input
+                    type="checkbox"
+                    class="sheet-checkbox"
+                    ${row.done ? 'checked' : ''}
+                    onchange="toggleRowDone('${region.id}', '${loc.id}', '${row.id}', this.checked)"
+                    aria-label="Marcar ${escapeHtml(row.label)}"
+                  />
+                </td>
+              </tr>
+            `;
+          });
+        });
+
+        tableHtml += `</tbody></table>`;
+        colWrapper.innerHTML = tableHtml;
+        board.appendChild(colWrapper);
+      });
+
+      updateGlobalStats();
+    }
+
+    // =========================================================================
+    // INTERACTIONS: YELLOW CHECKMARK HIGHLIGHT, INLINE EDIT, ADD/DELETE
+    // =========================================================================
+    function handleCellCheckboxClick(event, regionId, locId, rowId) {
+      if (event.target.tagName === 'INPUT') return;
+      const checkbox = event.currentTarget.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        toggleRowDone(regionId, locId, rowId, checkbox.checked);
+      }
+    }
+
+    function toggleRowDone(regionId, locId, rowId, isChecked) {
+      const region = sheetData.find(r => r.id === regionId);
+      const loc = region?.locations.find(l => l.id === locId);
+      const row = loc?.rows.find(r => r.id === rowId);
+      if (!row) return;
+
+      row.done = isChecked;
+      saveSheetData();
+
+      const tr = document.getElementById(`row-${rowId}`);
+      if (tr) {
+        tr.classList.toggle('is-done', isChecked);
+      }
+      if (statusFilter !== 'ALL') {
+        renderSpreadsheet();
+      }
+    }
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const btn = document.getElementById('toggle-edit-btn');
+      btn.textContent = isEditMode ? 'Editar: ON' : 'Editar: OFF';
+      btn.classList.toggle('bg-[#8a75d6]', isEditMode);
+      btn.classList.toggle('text-[#121212]', isEditMode);
+      renderSpreadsheet();
+      if (isEditMode) {
+        showToast('Modo edición activado: haz clic en cualquier celda para modificar texto.');
+      }
+    }
+
+    function editLocationName(regionId, locId, newName) {
+      const cleaned = newName.trim();
+      if (!cleaned) return;
+      const region = sheetData.find(r => r.id === regionId);
+      const loc = region?.locations.find(l => l.id === locId);
+      if (loc && loc.name !== cleaned) {
+        loc.name = cleaned;
+        saveSheetData();
+      }
+    }
+
+    function editRowField(regionId, locId, rowId, field, newVal) {
+      const cleaned = newVal.trim();
+      if (field === 'label' && !cleaned) {
+        renderSpreadsheet();
+        return;
+      }
+      const region = sheetData.find(r => r.id === regionId);
+      const loc = region?.locations.find(l => l.id === locId);
+      const row = loc?.rows.find(r => r.id === rowId);
+      if (row && row[field] !== cleaned) {
+        row[field] = cleaned;
+        saveSheetData();
+        if (field === 'info') renderSpreadsheet();
+      }
+    }
+
+    function deleteRow(regionId, locId, rowId) {
+      const region = sheetData.find(r => r.id === regionId);
+      const loc = region?.locations.find(l => l.id === locId);
+      if (!loc) return;
+      loc.rows = loc.rows.filter(r => r.id !== rowId);
+      if (loc.rows.length === 0 && region.locations.length > 1) {
+        region.locations = region.locations.filter(l => l.id !== locId);
+      }
+      saveSheetData();
+      renderSpreadsheet();
+      showToast('Fila eliminada.');
+    }
+
+    function handleInlineKey(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.target.blur();
+      }
+    }
+
+    // =========================================================================
+    // MODAL: ADD ENTRY
+    // =========================================================================
+    function openAddModal(prefillRegion = 'KANTO', prefillLoc = '') {
+      const modal = document.getElementById('add-modal');
+      const regionSel = document.getElementById('modal-region');
+      regionSel.innerHTML = sheetData
+        .map(r => `<option value="${r.id}" ${r.id === prefillRegion ? 'selected' : ''}>${r.name}</option>`)
+        .join('');
+
+      updateLocDatalist(prefillRegion);
+      document.getElementById('modal-location').value = prefillLoc;
+      document.getElementById('modal-label').value = '';
+      document.getElementById('modal-info').value = 'QB';
+      document.getElementById('modal-link').value = '';
+
+      modal.classList.remove('hidden');
+      document.getElementById('modal-label').focus();
+    }
+
+    function quickAddRow(regionId, locName) {
+      openAddModal(regionId, locName);
+    }
+
+    function closeAddModal() {
+      document.getElementById('add-modal').classList.add('hidden');
+    }
+
+    function updateLocDatalist(regionId) {
+      const region = sheetData.find(r => r.id === regionId);
+      const dl = document.getElementById('existing-locations-list');
+      dl.innerHTML = region
+        ? region.locations.filter(l => l.name).map(l => `<option value="${escapeHtml(l.name)}"></option>`).join('')
+        : '';
+    }
+
+    document.getElementById('modal-region').addEventListener('change', e => {
+      updateLocDatalist(e.target.value);
+    });
+
+    document.getElementById('add-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const regionId = document.getElementById('modal-region').value;
+      const locName = document.getElementById('modal-location').value.trim();
+      const label = document.getElementById('modal-label').value.trim();
+      const info = document.getElementById('modal-info').value.trim();
+      const link = document.getElementById('modal-link').value.trim();
+
+      if (!label) return;
+
+      const region = sheetData.find(r => r.id === regionId);
+      if (!region) return;
+
+      let targetLoc = region.locations.find(l => l.name.toLowerCase() === locName.toLowerCase());
+      if (!targetLoc) {
+        targetLoc = {
+          id: 'loc-' + Date.now(),
+          name: locName,
+          rows: []
+        };
+        region.locations.push(targetLoc);
+      }
+
+      targetLoc.rows.push({
+        id: 'row-' + Date.now(),
+        label,
+        info,
+        link,
+        done: false
+      });
+
+      saveSheetData();
+      closeAddModal();
+      renderSpreadsheet();
+      showToast(`Añadido: ${label}`);
+    });
+
+    // =========================================================================
+    // EXPORT, RESET & TOAST NOTIFICATIONS
+    // =========================================================================
+    let toastTimer = null;
+
+    function showToast(msg, actions = []) {
+      const box = document.getElementById('toast-box');
+      const msgEl = document.getElementById('toast-message');
+      const actEl = document.getElementById('toast-actions');
+      msgEl.textContent = msg;
+      actEl.innerHTML = '';
+
+      actions.forEach(a => {
+        const b = document.createElement('button');
+        b.textContent = a.label;
+        b.className = a.cls || 'px-2 py-0.5 rounded bg-[#f1c232] text-black font-bold cursor-pointer';
+        b.onclick = () => {
+          a.onClick();
+          box.classList.add('hidden');
+        };
+        actEl.appendChild(b);
+      });
+
+      box.classList.remove('hidden');
+      if (toastTimer) clearTimeout(toastTimer);
+      if (actions.length === 0) {
+        toastTimer = setTimeout(() => box.classList.add('hidden'), 3000);
+      }
+    }
+
+    function confirmReset() {
+      showToast('¿Restaurar toda la tabla y quitar marcas amarillas?', [
+        {
+          label: 'Sí, resetear',
+          cls: 'px-2 py-0.5 rounded bg-red-600 text-white font-bold cursor-pointer',
+          onClick: () => {
+            sheetData = JSON.parse(JSON.stringify(DEFAULT_SHEET_DATA));
+            saveSheetData();
+            renderSpreadsheet();
+            showToast('Tabla restaurada.');
+          }
+        },
+        {
+          label: 'Cancelar',
+          cls: 'px-2 py-0.5 rounded bg-zinc-700 text-zinc-200 cursor-pointer',
+          onClick: () => {}
+        }
+      ]);
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(sheetData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pokemmo_alt_dex_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Respaldo JSON exportado.');
+    }
+
+    // =========================================================================
+    // FILTER EVENT LISTENERS & ESCAPING
+    // =========================================================================
+    document.getElementById('search-input').addEventListener('input', e => {
+      searchQuery = e.target.value;
+      renderSpreadsheet();
+    });
+
+    document.getElementById('status-filter').addEventListener('change', e => {
+      statusFilter = e.target.value;
+      renderSpreadsheet();
+    });
+
+    document.getElementById('ball-filter').addEventListener('change', e => {
+      ballFilter = e.target.value;
+      renderSpreadsheet();
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeJs(str) {
+      if (!str) return '';
+      return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      applyGuideVisibility();
+      renderSpreadsheet();
+    });
+  </script>
+</body>
+</html>
